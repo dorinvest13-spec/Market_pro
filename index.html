@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04070a">
+<meta name="description" content="ИИ-Маркетолог PRO — генератор маркетинговых текстов на базе нейросетей">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ИИ-Маркетолог">
+<title>ИИ-Маркетолог PRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Tektur:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<canvas id="net" aria-hidden="true"></canvas>
+
+<main class="app" id="main-content">
+  <header class="head">
+    <div class="bot-tile"><span class="bot">🤖</span></div>
+    <div>
+      <h1 class="title">ИИ-Маркетолог<span class="caret">_</span></h1>
+      <p class="status"><span class="led" id="statusLed"></span><span id="statusText">PRO активен</span></p>
+    </div>
+    <div class="head-actions">
+      <span class="ver-chip">v6.1</span>
+      <button class="theme-toggle" id="themeToggle" aria-label="Тема">🌙</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="gen" role="tab"><span class="ico">✍️</span><span class="tab-label">Генератор</span></button>
+    <button class="tab-btn" data-tab="top" role="tab"><span class="ico">🏆</span><span class="tab-label">Топ-10</span></button>
+    <button class="tab-btn" data-tab="infra" role="tab"><span class="ico">🖼️</span><span class="tab-label">Инфографика</span></button>
+    <button class="tab-btn" data-tab="data" role="tab"><span class="ico">📊</span><span class="tab-label">Данные</span></button>
+  </nav>
+
+  <section class="view" id="view-gen">
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>01</b> ввод данных <i class="rule"></i></div>
+      <label class="lbl" for="topic">Тема <span class="cnt" id="counter">0 / 1500</span></label>
+      <textarea id="topic" maxlength="1500" placeholder="О чем написать?"></textarea>
+      <label class="lbl" for="format">Формат</label>
+      <div class="sel-wrap"><select id="format">
+        <option value="tg" selected>Пост в Telegram</option>
+        <option value="site">Описание для сайта</option>
+        <option value="insta">Реклама в Instagram</option>
+        <option value="vk">Пост для ВК</option>
+        <option value="dzen">Статья для Яндекс Дзен</option>
+      </select></div>
+      <div class="settings">
+        <div class="setting-group">
+          <label class="lbl">Тон</label>
+          <div class="opt-btns" id="toneBtns">
+            <button class="opt-btn active" data-tone="friendly">😊 Дружеский</button>
+            <button class="opt-btn" data-tone="formal">👔 Формальный</button>
+            <button class="opt-btn" data-tone="expert">🎓 Экспертный</button>
+            <button class="opt-btn" data-tone="bold">🔥 Дерзкий</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <label class="lbl">Длина</label>
+          <div class="opt-btns" id="lenBtns">
+            <button class="opt-btn" data-len="short">Коротко</button>
+            <button class="opt-btn active" data-len="medium">Средне</button>
+            <button class="opt-btn" data-len="long">Развёрнуто</button>
+          </div>
+        </div>
+      </div>
+      <div class="brand-dict">
+        <div class="brand-dict-head"><span>🚫</span>
+          <div><div class="brand-dict-title">Словарь бренда</div><div class="brand-dict-sub">Запрещённые слова</div></div>
+        </div>
+        <div class="brand-input-row">
+          <input type="text" class="brand-input" id="brandInput" placeholder="Слово" maxlength="30">
+          <button class="brand-add-btn" id="brandAddBtn">+</button>
+        </div>
+        <div class="brand-words" id="brandWords"><span class="brand-empty">Пусто</span></div>
+      </div>
+      <div class="chips">
+        <button class="chip" data-fill="Открытие кофейни в центре города">кофейня</button>
+        <button class="chip" data-fill="Скидки 30% на маникюр">маникюр</button>
+        <button class="chip" data-fill="Запуск доставки выпечки">доставка</button>
+      </div>
+      <div class="cta-row">
+        <div class="cta-wrap"><button class="cta" id="btnGenerate">
+          <span class="mini-spin" id="miniSpin" hidden></span>
+          <span id="ctaLabel">Сгенерировать</span><span id="ctaSpark">✨</span>
+        </button></div>
+        <button class="cta-ab" id="btnAB">⚡ 2 варианта</button>
+      </div>
+      <div class="cta-row" style="margin-top:8px">
+        <button class="cta-secondary" id="btnCampaign" style="width:100%"><span id="campLabel">🚀 Кампания (3 формата)</span></button>
+      </div>
+      <div class="campaign-grid" id="campaignGrid" hidden>
+        <div class="campaign-item" data-camp="tg"><div class="c-icon">📨</div><div class="c-label">Telegram</div><div class="c-status">ожидание</div></div>
+        <div class="campaign-item" data-camp="insta"><div class="c-icon">📸</div><div class="c-label">Instagram</div><div class="c-status">ожидание</div></div>
+        <div class="campaign-item" data-camp="vk"><div class="c-icon">💙</div><div class="c-label">ВК</div><div class="c-status">ожидание</div></div>
+      </div>
+    </div></section>
+
+    <section class="card" id="resultCard">
+      <div class="console-bar">
+        <span class="lights"><i></i><i></i><i></i></span>
+        <span class="fname" id="fname">generated_post.txt</span>
+        <div class="console-actions">
+          <button class="undo-btn" id="undoBtn" hidden>↩</button>
+          <button class="save-template-btn" id="saveTemplateBtn" hidden>★</button>
+          <button class="dl-btn" id="dlBtn" disabled>💾</button>
+          <button class="copy" id="copyBtn" disabled>📋 Копировать</button>
+        </div>
+      </div>
+      <div class="screen">
+        <div class="variant-tabs" id="variantTabs" hidden>
+          <button class="variant-tab active" data-variant="0">Вариант A</button>
+          <button class="variant-tab" data-variant="1">Вариант B</button>
+        </div>
+        <div class="result-tabs" id="resultTabs" hidden>
+          <button class="rtab active" data-rtab="text">📝 Текст</button>
+          <button class="rtab" data-rtab="preview">👁 Превью</button>
+          <button class="rtab" data-rtab="analyze">📊 Анализ</button>
+        </div>
+        <div class="empty" id="emptyState"><span class="prompt">&gt;<span class="u">_</span></span><p>Здесь появится ваш текст...</p></div>
+        <div class="loader" id="loader" hidden>
+          <div class="spinner"></div>
+          <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
+          <p class="think-text" id="thinkText">Анализирую тему…</p>
+        </div>
+        <div id="rtab-text"><div class="result-text" id="output" hidden></div></div>
+        <div id="rtab-preview" hidden><div class="preview-box" id="previewBox"></div></div>
+        <div id="rtab-analyze" hidden><div class="preview-box" id="analyzeBox"></div></div>
+        <div class="meta" id="meta" hidden></div>
+        <div class="stats-row" id="statsRow" hidden></div>
+      </div>
+    </section>
+
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>03</b> история <i class="rule"></i><button class="tag-action" id="exportHistoryBtn">📥 Экспорт</button></div>
+      <div class="history-list" id="historyList"><div class="history-empty">История пуста ✨</div></div>
+    </div></section>
+  </section>
+
+  <section class="view" id="view-top" hidden>
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>02</b> анализ рынка <i class="rule"></i></div>
+      <label class="lbl" for="cat">Категория <span class="cnt" id="cnt2">0 / 200</span></label>
+      <textarea id="cat" maxlength="200" placeholder="Например: кроссовки Nike" style="min-height:90px"></textarea>
+      <label class="lbl" for="criteria">Сортировка</label>
+      <div class="sel-wrap"><select id="criteria">
+        <option value="рейтингу" selected>По рейтингу</option>
+        <option value="цене">По цене</option>
+        <option value="качеству">По качеству</option>
+        <option value="популярности">По популярности</option>
+      </select></div>
+      <div class="cta-wrap"><button class="cta" id="btnTop">
+        <span class="mini-spin" id="miniSpinTop" hidden></span>
+        <span id="ctaLabelTop">Найти Топ-10</span><span id="ctaSparkTop">🔍</span>
+      </button></div>
+    </div></section>
+    <section class="card" id="topCard">
+      <div class="console-bar">
+        <span class="lights"><i></i><i></i><i></i></span><span class="fname">top10.txt</span>
+        <div class="console-actions"><button class="copy" id="copyTop" disabled>📋 Копировать</button></div>
+      </div>
+      <div class="screen">
+        <div class="empty" id="emptyTop"><span class="prompt">&gt;<span class="u">_</span></span><p>Введите категорию…</p></div>
+        <div class="loader" id="loaderTop" hidden>
+          <div class="spinner"></div>
+          <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
+          <p class="think-text" id="thinkTextTop">Анализирую…</p>
+        </div>
+        <div class="result-text" id="outputTop" hidden></div>
+        <div class="error-box" id="errorTop" hidden></div>
+      </div>
+    </section>
+  </section>
+
+  <section class="view" id="view-infra" hidden>
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>04</b> фото <i class="rule"></i></div>
+      <div class="drop-zone" id="dropZone" tabindex="0">
+        <div class="drop-zone-content" id="dropContent">
+          <span class="drop-zone-icon">📷</span>
+          <div class="drop-zone-text">Нажмите для загрузки фото</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+    </div></section>
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>05</b> стиль <i class="rule"></i></div>
+      <label class="lbl" for="stylePreset">Стиль</label>
+      <div class="sel-wrap"><select id="stylePreset">
+        <option value="studio">🤍 Студийный</option>
+        <option value="lifestyle">🌿 Lifestyle</option>
+        <option value="neon">💜 Неон</option>
+        <option value="eco">🌱 Эко</option>
+        <option value="luxury">✨ Люкс</option>
+      </select></div>
+      <button class="btn-prompt" id="btnGenPrompt" style="margin:12px 0"><span>Сгенерировать промпт</span><span class="spark">✨</span></button>
+      <label class="lbl" for="style">Описание стиля</label>
+      <textarea id="style" maxlength="300" placeholder="Опишите стиль" style="min-height:80px"></textarea>
+      <div class="cta-wrap"><button class="cta" id="btnInfra">
+        <span class="mini-spin" id="miniSpinInfra" hidden></span>
+        <span id="ctaLabelInfra">Создать карточку</span><span id="ctaSparkInfra">✨</span>
+      </button></div>
+    </div></section>
+    <section class="card" id="infraCard">
+      <div class="console-bar">
+        <span class="lights"><i></i><i></i><i></i></span><span class="fname">image.jpg</span>
+        <div class="console-actions"><a class="dl-btn" id="dlImg" hidden download>💾 Скачать</a></div>
+      </div>
+      <div class="screen">
+        <div class="empty" id="emptyInfra"><span class="prompt">&gt;<span class="u">_</span></span><p>Загрузите фото…</p></div>
+        <div class="loader" id="loaderInfra" hidden>
+          <div class="spinner"></div>
+          <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
+          <p class="think-text" id="thinkTextInfra">Создаю…</p>
+        </div>
+        <div class="result-image-wrap" id="resultImgWrap" hidden>
+          <img class="result-image" id="resultImg" alt="Результат">
+        </div>
+        <div class="error-box" id="errorInfra" hidden></div>
+      </div>
+    </section>
+  </section>
+
+  <section class="view" id="view-data" hidden>
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>06</b> статистика <i class="rule"></i></div>
+      <div class="dash-grid">
+        <div class="dash-card"><div class="dash-icon">✍️</div><div class="dash-value" id="statGen">0</div><div class="dash-label">Генераций</div></div>
+        <div class="dash-card"><div class="dash-icon">📝</div><div class="dash-value" id="statWords">0</div><div class="dash-label">Слов</div></div>
+        <div class="dash-card"><div class="dash-icon">🚀</div><div class="dash-value" id="statCampaigns">0</div><div class="dash-label">Кампаний</div></div>
+        <div class="dash-card"><div class="dash-icon">🖼️</div><div class="dash-value" id="statImages">0</div><div class="dash-label">Картинок</div></div>
+      </div>
+    </div></section>
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>07</b> шаблоны <i class="rule"></i></div>
+      <div class="templates-list" id="templatesList"><div class="templates-empty">Пусто</div></div>
+    </div></section>
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>08</b> управление <i class="rule"></i></div>
+      <div class="data-actions">
+        <button class="data-btn" id="exportAllBtn"><span class="data-ico">📥</span><span class="data-info">Экспорт данных</span></button>
+        <button class="data-btn" id="importBtn"><span class="data-ico">📤</span><span class="data-info">Импорт данных</span><input type="file" id="importFile" accept=".json" hidden></button>
+        <button class="data-btn" id="runTestsBtn"><span class="data-ico">🧪</span><span class="data-info">Самодиагностика</span></button>
+        <button class="data-btn danger" id="clearAllBtn"><span class="data-ico">🗑️</span><span class="data-info">Очистить всё</span></button>
+      </div>
+      <div class="test-results" id="testResults" hidden></div>
+    </div></section>
+  </section>
+
+  <footer class="foot">neuro-модуль · <em>powered by Pollinations</em></footer>
+</main>
+
+<div id="toast" role="status"></div>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Подтверждение</div>
+    <div class="modal-text" id="modalText">Вы уверены?</div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="modalCancel">Отмена</button>
+      <button class="modal-btn confirm" id="modalConfirm">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

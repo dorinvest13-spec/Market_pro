@@ -1,0 +1,15 @@
+{
+  "name": "ИИ-Маркетолог PRO",
+  "short_name": "ИИ-Маркетолог",
+  "description": "Генератор маркетинговых текстов на базе нейросетей",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#04070a",
+  "theme_color": "#04070a",
+  "icons": [{
+    "src": "icons/icon-192.png",
+    "sizes": "192x192",
+    "type": "image/png"
+  }]
+}

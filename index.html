@@ -1,591 +1,394 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ИИ-Маркетолог v6.2</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #f0f4f8;
-    color: #1a1a2e;
-    min-height: 100vh;
-  }
-  .header {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: white;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header .logo { font-size: 32px; }
-  .header h1 { font-size: 20px; font-weight: 700; }
-  .header .version {
-    background: #0f3460;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    color: #4ecca3;
-  }
-  .pro-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: #4ecca3;
-    margin-top: 2px;
-  }
-  .pro-badge::before {
-    content: '';
-    width: 8px; height: 8px;
-    background: #4ecca3;
-    border-radius: 50%;
-    display: inline-block;
-  }
-  .container { max-width: 700px; margin: 0 auto; padding: 16px; }
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04070a">
+<meta name="description" content="ИИ-Маркетолог PRO — генератор маркетинговых текстов по правилам каждой площадки, топ-10 товаров и инфографика на базе нейросетей">
+<meta name="author" content="dorinvest13-spec">
 
-  /* Форма ввода */
-  .input-section {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  }
-  .input-section textarea {
-    width: 100%;
-    border: 2px solid #e0e6ed;
-    border-radius: 12px;
-    padding: 14px;
-    font-size: 15px;
-    resize: vertical;
-    min-height: 80px;
-    font-family: inherit;
-    transition: border-color 0.2s;
-  }
-  .input-section textarea:focus {
-    outline: none;
-    border-color: #4ecca3;
-  }
-  .platforms-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-    flex-wrap: wrap;
-  }
-  .platform-chip {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 2px solid #e0e6ed;
-    background: white;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    user-select: none;
-  }
-  .platform-chip.active {
-    border-color: #4ecca3;
-    background: #e8f8f0;
-    color: #1a7a5a;
-  }
-  .tone-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-    flex-wrap: wrap;
-  }
-  .tone-chip {
-    padding: 6px 14px;
-    border-radius: 16px;
-    border: 2px solid #e0e6ed;
-    background: white;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .tone-chip.active {
-    border-color: #e94560;
-    background: #fde8ec;
-    color: #c0392b;
-  }
-  .generate-btn {
-    width: 100%;
-    padding: 16px;
-    background: linear-gradient(135deg, #4ecca3 0%, #38b28a 100%);
-    color: white;
-    border: none;
-    border-radius: 14px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 16px;
-    transition: transform 0.15s, box-shadow 0.15s;
-  }
-  .generate-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(78,204,163,0.4); }
-  .generate-btn:active { transform: scale(0.98); }
-  .generate-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
+<!-- Open Graph -->
+<meta property="og:title" content="ИИ-Маркетолог PRO">
+<meta property="og:description" content="Посты для Telegram, VK, Instagram, Дзена и сайта — с учётом правил каждой площадки">
+<meta property="og:type" content="website">
 
-  /* Результаты */
-  .results-section { margin-top: 16px; }
-  .result-card {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border-left: 4px solid #4ecca3;
-    animation: slideIn 0.3s ease;
-  }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .result-card .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-  .result-card .card-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #4ecca3;
-  }
-  .result-card .card-meta {
-    font-size: 11px;
-    color: #999;
-  }
-  .result-card .card-text {
-    font-size: 14px;
-    line-height: 1.7;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
-  .result-card .card-stats {
-    display: flex;
-    gap: 12px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #f0f0f0;
-    font-size: 12px;
-    color: #888;
-  }
-  .result-card .card-stats span {
-    background: #f5f5f5;
-    padding: 4px 10px;
-    border-radius: 8px;
-  }
-  .copy-btn {
-    background: #4ecca3;
-    color: white;
-    border: none;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 12px;
-    cursor: pointer;
-    font-weight: 600;
-  }
-  .copy-btn:hover { background: #38b28a; }
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ИИ-Маркетолог">
 
-  /* Лоадер */
-  .loading-card {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border-left: 4px solid #f0ad4e;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .spinner {
-    width: 24px; height: 24px;
-    border: 3px solid #e0e6ed;
-    border-top-color: #4ecca3;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+<title>ИИ-Маркетолог PRO — генератор текстов по правилам площадок</title>
 
-  /* История */
-  .history-section {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    margin-top: 16px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  }
-  .history-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-  .history-header h3 { font-size: 14px; color: #4ecca3; }
-  .history-item {
-    padding: 12px;
-    border: 1px solid #f0f0f0;
-    border-radius: 10px;
-    margin-bottom: 8px;
-    font-size: 13px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .history-item .h-title { font-weight: 600; color: #4ecca3; }
-  .history-item .h-date { font-size: 11px; color: #999; }
-  .history-item .h-delete {
-    color: #e94560;
-    cursor: pointer;
-    font-size: 16px;
-    padding: 4px 8px;
-  }
-
-  .error-card {
-    border-left-color: #e94560 !important;
-  }
-  .error-card .card-text { color: #e94560; }
-
-  .footer {
-    text-align: center;
-    padding: 20px;
-    font-size: 11px;
-    color: #aaa;
-    letter-spacing: 1px;
-  }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Tektur:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-<div class="header">
-  <div class="logo">🤖</div>
-  <div>
-    <h1>ИИ-Маркетолог <span class="version">v6.2</span></h1>
-    <div class="pro-badge">PRO АКТИВЕН</div>
+<canvas id="net" aria-hidden="true"></canvas>
+
+<main class="app" id="main-content">
+
+  <!-- ШАПКА -->
+  <header class="head">
+    <div class="bot-tile" aria-hidden="true"><span class="bot">🤖</span></div>
+    <div>
+      <h1 class="title">ИИ-Маркетолог<span class="caret">_</span></h1>
+      <p class="status"><span class="led" id="statusLed"></span><span id="statusText">PRO активен</span></p>
+    </div>
+    <div class="head-actions">
+      <span class="ver-chip">v6.3</span>
+      <button class="theme-toggle" id="themeToggle" aria-label="Переключить тему">🌙</button>
+    </div>
+  </header>
+
+  <!-- ВКЛАДКИ -->
+  <nav class="tabs" role="tablist" aria-label="Разделы">
+    <button class="tab-btn active" data-tab="gen" role="tab" aria-selected="true"><span class="ico">✍️</span><span class="tab-label">Генератор</span></button>
+    <button class="tab-btn" data-tab="top" role="tab" aria-selected="false"><span class="ico">🏆</span><span class="tab-label">Топ-10</span></button>
+    <button class="tab-btn" data-tab="infra" role="tab" aria-selected="false"><span class="ico">🖼️</span><span class="tab-label">Инфографика</span></button>
+    <button class="tab-btn" data-tab="data" role="tab" aria-selected="false"><span class="ico">📊</span><span class="tab-label">Данные</span></button>
+  </nav>
+
+  <!-- ========== ВКЛАДКА 1: ГЕНЕРАТОР ========== -->
+  <section class="view" id="view-gen">
+
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>01</b> ввод данных <i class="rule"></i></div>
+
+      <label class="lbl" for="topic">Тема <span class="cnt" id="counter">0 / 1500</span></label>
+      <textarea id="topic" maxlength="1500" placeholder="О чем написать? (например: открытие кофейни, скидки на маникюр)"></textarea>
+
+      <label class="lbl" for="format">Площадка / формат</label>
+      <div class="sel-wrap">
+        <select id="format" aria-label="Формат вывода">
+          <option value="tg" selected>Пост в Telegram</option>
+          <option value="site">Описание для сайта</option>
+          <option value="insta">Реклама в Instagram</option>
+          <option value="vk">Пост для ВК (ВКонтакте)</option>
+          <option value="dzen">Статья для Яндекс Дзен</option>
+        </select>
+      </div>
+      <!-- Сюда скрипт сам вставит подсказку правил площадки и переключатель моделей -->
+
+      <div class="settings">
+        <div class="setting-group">
+          <label class="lbl">Тон</label>
+          <div class="opt-btns" id="toneBtns">
+            <button class="opt-btn active" data-tone="friendly" aria-label="Дружеский тон">😊 Дружеский</button>
+            <button class="opt-btn" data-tone="formal" aria-label="Формальный тон">👔 Формальный</button>
+            <button class="opt-btn" data-tone="expert" aria-label="Экспертный тон">🎓 Экспертный</button>
+            <button class="opt-btn" data-tone="bold" aria-label="Дерзкий тон">🔥 Дерзкий</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <label class="lbl">Длина</label>
+          <div class="opt-btns" id="lenBtns">
+            <button class="opt-btn" data-len="short" aria-label="Короткий текст">Коротко</button>
+            <button class="opt-btn active" data-len="medium" aria-label="Средний текст">Средне</button>
+            <button class="opt-btn" data-len="long" aria-label="Развёрнутый текст">Развёрнуто</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="brand-dict">
+        <div class="brand-dict-head">
+          <span aria-hidden="true">🚫</span>
+          <div>
+            <div class="brand-dict-title">Словарь бренда</div>
+            <div class="brand-dict-sub">Слова, которые ИИ не будет использовать</div>
+          </div>
+        </div>
+        <div class="brand-input-row">
+          <input type="text" class="brand-input" id="brandInput" placeholder="Введите запрещённое слово" maxlength="30" aria-label="Запрещённое слово">
+          <button class="brand-add-btn" id="brandAddBtn" aria-label="Добавить слово">+</button>
+        </div>
+        <div class="brand-words" id="brandWords"><span class="brand-empty">Пусто</span></div>
+      </div>
+
+      <div class="chips" aria-label="Быстрые темы">
+        <button class="chip" data-fill="Открытие кофейни в центре города">кофейня</button>
+        <button class="chip" data-fill="Скидки 30% на маникюр до конца недели">маникюр</button>
+        <button class="chip" data-fill="Запуск доставки свежей выпечки">доставка</button>
+        <button class="chip" data-fill="Кроссовки Adidas: новое поступление">кроссовки</button>
+      </div>
+
+      <div class="cta-row">
+        <div class="cta-wrap">
+          <button class="cta" id="btnGenerate" aria-label="Сгенерировать текст">
+            <span class="mini-spin" id="miniSpin" hidden></span>
+            <span id="ctaLabel">Сгенерировать</span>
+            <span id="ctaSpark" aria-hidden="true">✨</span>
+          </button>
+        </div>
+        <button class="cta-ab" id="btnAB" aria-label="Сгенерировать два варианта">⚡ 2 варианта</button>
+      </div>
+
+      <div class="cta-row" style="margin-top:8px">
+        <button class="cta-secondary" id="btnCampaign" style="width:100%" aria-label="Кампания для трёх форматов">
+          <span id="campLabel">🚀 Кампания (3 формата)</span>
+        </button>
+      </div>
+
+      <div class="campaign-grid" id="campaignGrid" hidden>
+        <div class="campaign-item" data-camp="tg"><div class="c-icon">📨</div><div class="c-label">Telegram</div><div class="c-status">ожидание</div></div>
+        <div class="campaign-item" data-camp="insta"><div class="c-icon">📸</div><div class="c-label">Instagram</div><div class="c-status">ожидание</div></div>
+        <div class="campaign-item" data-camp="vk"><div class="c-icon">💙</div><div class="c-label">ВК</div><div class="c-status">ожидание</div></div>
+      </div>
+    </div></section>
+
+    <!-- РЕЗУЛЬТАТ -->
+    <section class="card" id="resultCard">
+      <div class="console-bar">
+        <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="fname" id="fname">generated_post.txt</span>
+        <div class="console-actions">
+          <button class="undo-btn" id="undoBtn" hidden aria-label="Вернуть предыдущий результат">↩</button>
+          <button class="save-template-btn" id="saveTemplateBtn" hidden aria-label="Сохранить тему как шаблон">★</button>
+          <button class="dl-btn" id="dlBtn" disabled aria-label="Скачать текст">💾</button>
+          <button class="copy" id="copyBtn" disabled aria-label="Копировать текст">📋 Копировать</button>
+        </div>
+      </div>
+      <div class="screen">
+        <div class="variant-tabs" id="variantTabs" hidden>
+          <button class="variant-tab active" data-variant="0">Вариант A</button>
+          <button class="variant-tab" data-variant="1">Вариант B</button>
+        </div>
+        <div class="result-tabs" id="resultTabs" hidden>
+          <button class="rtab active" data-rtab="text">📝 Текст</button>
+          <button class="rtab" data-rtab="preview">👁 Превью</button>
+          <button class="rtab" data-rtab="analyze">📊 Анализ</button>
+        </div>
+        <div class="empty" id="emptyState">
+          <span class="prompt" aria-hidden="true">&gt;<span class="u">_</span></span>
+          <p>Здесь появится ваш текст...</p>
+        </div>
+        <div class="loader" id="loader" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="eq" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+          <p class="think-text" id="thinkText">Читаю правила площадки…</p>
+        </div>
+        <div id="rtab-text"><div class="result-text" id="output" hidden></div></div>
+        <div id="rtab-preview" hidden><div class="preview-box" id="previewBox"></div></div>
+        <div id="rtab-analyze" hidden><div class="preview-box" id="analyzeBox"></div></div>
+        <div class="meta" id="meta" hidden></div>
+        <div class="stats-row" id="statsRow" hidden></div>
+      </div>
+    </section>
+
+    <!-- ИСТОРИЯ -->
+    <section class="card"><div class="card-inner">
+      <div class="tag">
+        <b>03</b> история генераций <i class="rule"></i>
+        <button class="tag-action" id="exportHistoryBtn" aria-label="Экспортировать историю">📥 Экспорт</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <div class="history-empty">История пуста — создайте первую генерацию ✨</div>
+      </div>
+    </div></section>
+  </section>
+
+  <!-- ========== ВКЛАДКА 2: ТОП-10 ========== -->
+  <section class="view" id="view-top" hidden>
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>02</b> анализ рынка <i class="rule"></i></div>
+      <label class="lbl" for="cat">Категория или бренд <span class="cnt" id="cnt2">0 / 200</span></label>
+      <textarea id="cat" maxlength="200" placeholder="Например: кроссовки Nike, умные часы" style="min-height:90px"></textarea>
+      <label class="lbl" for="criteria">Критерий сортировки</label>
+      <div class="sel-wrap">
+        <select id="criteria" aria-label="Критерий сортировки">
+          <option value="рейтингу" selected>По рейтингу</option>
+          <option value="цене (от дешевых к дорогим)">По цене (от дешевых)</option>
+          <option value="качеству">По качеству</option>
+          <option value="популярности среди покупателей">По популярности</option>
+        </select>
+      </div>
+      <div class="cta-wrap">
+        <button class="cta" id="btnTop" aria-label="Найти Топ-10 товаров">
+          <span class="mini-spin" id="miniSpinTop" hidden></span>
+          <span id="ctaLabelTop">Найти Топ-10</span>
+          <span id="ctaSparkTop" aria-hidden="true">🔍</span>
+        </button>
+      </div>
+    </div></section>
+
+    <section class="card" id="topCard">
+      <div class="console-bar">
+        <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="fname">top10_results.txt</span>
+        <div class="console-actions"><button class="copy" id="copyTop" disabled aria-label="Копировать топ-10">📋 Копировать</button></div>
+      </div>
+      <div class="screen">
+        <div class="empty" id="emptyTop">
+          <span class="prompt" aria-hidden="true">&gt;<span class="u">_</span></span>
+          <p>Введите категорию — и получите Топ-10 товаров…</p>
+        </div>
+        <div class="loader" id="loaderTop" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="eq" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+          <p class="think-text" id="thinkTextTop">Подключаюсь к маркетплейсам…</p>
+        </div>
+        <div class="result-text" id="outputTop" hidden></div>
+        <div class="error-box" id="errorTop" hidden></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ========== ВКЛАДКА 3: ИНФОГРАФИКА ========== -->
+  <section class="view" id="view-infra" hidden>
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>04</b> загрузка фото <i class="rule"></i></div>
+      <label class="lbl">Фото товара</label>
+      <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="Загрузить фото товара">
+        <div class="drop-zone-content" id="dropContent">
+          <span class="drop-zone-icon" aria-hidden="true">📷</span>
+          <div class="drop-zone-text">Нажмите, чтобы загрузить фото товара</div>
+          <div class="drop-zone-hint">или перетащите файл сюда</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+    </div></section>
+
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>05</b> стиль и промпт <i class="rule"></i></div>
+
+      <label class="lbl" for="stylePreset">Готовый стиль</label>
+      <div class="sel-wrap">
+        <select id="stylePreset" aria-label="Выбор стиля">
+          <option value="studio">🤍 Студийный минимализм</option>
+          <option value="lifestyle">🌿 Lifestyle (жизненный)</option>
+          <option value="neon">💜 Неон / Киберпанк</option>
+          <option value="eco">🌱 Эко / Натуральность</option>
+          <option value="luxury">✨ Премиум / Люкс</option>
+        </select>
+      </div>
+
+      <button class="btn-prompt" id="btnGenPrompt" aria-label="Сгенерировать промпт">
+        <span>Сгенерировать промпт</span>
+        <span class="spark" aria-hidden="true">✨</span>
+      </button>
+
+      <label class="lbl" for="style">Стиль или референс (промпт для ИИ)</label>
+      <textarea id="style" maxlength="300" placeholder="Например: neon background, studio light, Apple style. Замените [product] на ваш товар" style="min-height:80px"></textarea>
+      <!-- Сюда скрипт сам вставит переключатель моделей картинки (flux / turbo) -->
+
+      <div class="hint-box" role="note">
+        <span class="hint-ico" aria-hidden="true">💡</span>
+        <span class="hint-text"><b>Совет:</b> картинку генерирует модель <b>flux</b> (или <b>turbo</b>). Чем точнее промпт на английском — тем лучше результат.</span>
+      </div>
+
+      <div class="cta-wrap">
+        <button class="cta" id="btnInfra" aria-label="Сгенерировать карточку">
+          <span class="mini-spin" id="miniSpinInfra" hidden></span>
+          <span id="ctaLabelInfra">Сгенерировать карточку</span>
+          <span id="ctaSparkInfra" aria-hidden="true">✨</span>
+        </button>
+      </div>
+    </div></section>
+
+    <section class="card" id="infraCard">
+      <div class="console-bar">
+        <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="fname">generated_image.jpg</span>
+        <div class="console-actions">
+          <a class="dl-btn" id="dlImg" hidden download aria-label="Скачать картинку">💾 Скачать</a>
+        </div>
+      </div>
+      <div class="screen">
+        <div class="empty" id="emptyInfra">
+          <span class="prompt" aria-hidden="true">&gt;<span class="u">_</span></span>
+          <p>Загрузите фото и опишите стиль — получите карточку товара</p>
+        </div>
+        <div class="loader" id="loaderInfra" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="eq" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+          <p class="think-text" id="thinkTextInfra">Анализирую фото…</p>
+        </div>
+        <div class="result-image-wrap" id="resultImgWrap" hidden>
+          <img class="result-image" id="resultImg" alt="Сгенерированная карточка товара">
+        </div>
+        <div class="error-box" id="errorInfra" hidden></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ========== ВКЛАДКА 4: ЦЕНТР ДАННЫХ ========== -->
+  <section class="view" id="view-data" hidden>
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>06</b> статистика использования <i class="rule"></i></div>
+      <div class="dash-grid">
+        <div class="dash-card"><div class="dash-icon">✍️</div><div class="dash-value" id="statGen">0</div><div class="dash-label">Генераций</div></div>
+        <div class="dash-card"><div class="dash-icon">📝</div><div class="dash-value" id="statWords">0</div><div class="dash-label">Слов создано</div></div>
+        <div class="dash-card"><div class="dash-icon">🚀</div><div class="dash-value" id="statCampaigns">0</div><div class="dash-label">Кампаний</div></div>
+        <div class="dash-card"><div class="dash-icon">🖼️</div><div class="dash-value" id="statImages">0</div><div class="dash-label">Картинок</div></div>
+      </div>
+    </div></section>
+
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>07</b> быстрые шаблоны <i class="rule"></i></div>
+      <p style="font-size:12px;color:var(--faint);margin-bottom:12px;line-height:1.5">
+        Сохраняйте любимые темы: нажмите ★ в карточке результата. Шаблоны переживают перезагрузку страницы.
+      </p>
+      <div class="templates-list" id="templatesList">
+        <div class="templates-empty">Пока нет сохранённых шаблонов</div>
+      </div>
+    </div></section>
+
+    <section class="card"><div class="card-inner">
+      <div class="tag"><b>08</b> управление данными и диагностика <i class="rule"></i></div>
+      <div class="data-actions">
+        <button class="data-btn" id="exportAllBtn">
+          <span class="data-ico" aria-hidden="true">📥</span>
+          <span class="data-info">Экспортировать все данные<div class="data-sub">История, шаблоны, словарь бренда, настройки</div></span>
+        </button>
+        <button class="data-btn" id="importBtn">
+          <span class="data-ico" aria-hidden="true">📤</span>
+          <span class="data-info">Импортировать данные<div class="data-sub">Восстановить из резервной копии</div></span>
+          <input type="file" id="importFile" accept=".json" hidden>
+        </button>
+        <button class="data-btn" id="runTestsBtn">
+          <span class="data-ico" aria-hidden="true">🧪</span>
+          <span class="data-info">Самодиагностика + живой тест ИИ<div class="data-sub">Покажет, какой эндпоинт нейросети отвечает</div></span>
+        </button>
+        <button class="data-btn danger" id="clearAllBtn">
+          <span class="data-ico" aria-hidden="true">🗑️</span>
+          <span class="data-info">Очистить все данные<div class="data-sub">Удалить историю, шаблоны и настройки</div></span>
+        </button>
+      </div>
+      <div class="test-results" id="testResults" hidden></div>
+    </div></section>
+  </section>
+
+  <footer class="foot">neuro-модуль · правила площадок · <em>powered by Pollinations</em></footer>
+</main>
+
+<!-- УВЕДОМЛЕНИЯ И МОДАЛКА -->
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-title" id="modalTitle">Подтверждение</div>
+    <div class="modal-text" id="modalText">Вы уверены?</div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" id="modalCancel">Отмена</button>
+      <button class="modal-btn confirm" id="modalConfirm">Удалить</button>
+    </div>
   </div>
 </div>
 
-<div class="container">
-
-  <!-- Ввод -->
-  <div class="input-section">
-    <textarea id="userInput" placeholder="Опишите продукт или тему поста...&#10;Например: Джинсы мужские классические, синие, размер 30-36, цена 2990₽"></textarea>
-
-    <div style="margin-top:12px;font-size:13px;font-weight:600;color:#555;">Площадки:</div>
-    <div class="platforms-row">
-      <div class="platform-chip active" data-platform="vk" onclick="toggleChip(this)">📝 Пост для ВК</div>
-      <div class="platform-chip active" data-platform="telegram" onclick="toggleChip(this)">✈️ Пост в Telegram</div>
-      <div class="platform-chip active" data-platform="dzen" onclick="toggleChip(this)">📰 Статья для Яндекс Дзен</div>
-    </div>
-
-    <div style="margin-top:12px;font-size:13px;font-weight:600;color:#555;">Тон:</div>
-    <div class="tone-row">
-      <div class="tone-chip active" data-tone="expert" onclick="toggleTone(this)">Экспертный</div>
-      <div class="tone-chip" data-tone="friendly" onclick="toggleTone(this)">Дружелюбный</div>
-      <div class="tone-chip" data-tone="aggressive" onclick="toggleTone(this)">Агрессивный</div>
-      <div class="tone-chip" data-tone="neutral" onclick="toggleTone(this)">Нейтральный</div>
-    </div>
-
-    <button class="generate-btn" id="generateBtn" onclick="generateAll()">
-      ⚡ Сгенерировать для всех площадок
-    </button>
+<noscript>
+  <div style="padding:24px;text-align:center;font-family:sans-serif">
+    <h1>Нужен JavaScript</h1>
+    <p>Включите JavaScript в настройках браузера, чтобы приложение работало.</p>
   </div>
+</noscript>
 
-  <!-- Результаты -->
-  <div class="results-section" id="resultsSection"></div>
-
-  <!-- История -->
-  <div class="history-section">
-    <div class="history-header">
-      <h3>📋 ИСТОРИЯ</h3>
-      <span style="font-size:13px;cursor:pointer;color:#4ecca3;" onclick="clearHistory()">Очистить</span>
-    </div>
-    <div id="historyList"></div>
-  </div>
-
-</div>
-
-<div class="footer">NEURO-МОДУЛЬ · POWERED BY POLLINATIONS</div>
-
-<script>
-// ==================== КОНФИГ ====================
-
-const TONE_DESCRIPTIONS = {
-  expert: 'экспертный, профессиональный, с фактами и цифрами, уверенный',
-  friendly: 'дружелюбный, тёплый, как разговор с другом, с эмодзи',
-  aggressive: 'агрессивный продающий, с urgency, дедлайнами, ограниченными предложениями',
-  neutral: 'нейтральный, информативный, без эмоциональных окрасок'
-};
-
-const PLATFORM_PROMPTS = {
-  vk: {
-    name: 'Пост для ВК',
-    icon: '📝',
-    systemPrompt: `Ты — профессиональный SMM-специалист для ВКонтакте.
-Правила:
-- Пиши ТОЛЬКО готовый пост. НЕ включай текст запроса пользователя в ответ.
-- НЕ начинай с фраз типа "Вот ваш пост", "Конечно", "У нас запрос".
-- Структура: цепляющий заголовок (1 строка) → боль/проблема клиента → решение (продукт) → 3-4 преимущества → призыв к действию (CTA) → хештеги.
-- Длина: 80-150 слов.
-- Используй эмодзи умеренно (3-5 штук).
-- Добавь 3-5 релевантных хештегов в конце.
-- Тон: {tone}.
-- Пиши сразу пост, без пояснений.`
-  },
-  telegram: {
-    name: 'Пост в Telegram',
-    icon: '✈️',
-    systemPrompt: `Ты — опытный Telegram-маркетолог.
-Правила:
-- Пиши ТОЛЬКО готовый пост. НЕ включай текст запроса пользователя в ответ.
-- НЕ начинай с фраз типа "Вот ваш пост", "Конечно".
-- Telegram-формат: короткий, ёмкий, с абзацами по 2-3 строки.
-- Структура: цепляющая первая строка (жирным) → суть предложения → ключевые выгоды (маркированный список) → CTA с ссылкой-заглушкой [подробнее].
-- Длина: 60-120 слов.
-- Используй форматирование: **жирный**, _курсив_, моноширинный для цен.
-- Тон: {tone}.
-- Пиши сразу пост, без пояснений.`
-  },
-  dzen: {
-    name: 'Статья для Яндекс Дзен',
-    icon: '📰',
-    systemPrompt: `Ты — копирайтер для Яндекс Дзен.
-Правила:
-- Пиши ТОЛЬКО готовую статью. НЕ включай текст запроса пользователя в ответ.
-- НЕ начинай с фраз типа "Вот ваша статья", "Конечно".
-- Формат Дзен: цепляющий заголовок (вопрос или интрига) → вступление с болью читателя → основная часть с пользой и фактами → вывод с CTA.
-- Длина: 200-350 слов.
-- Используй подзаголовки (##), списки, выделения.
-- Статья должна быть полезной и информативной, нативно продвигающей продукт.
-- Тон: {tone}.
-- Пиши сразу статью, без пояснений.`
-  }
-};
-
-// ==================== UI ====================
-
-function toggleChip(el) {
-  el.classList.toggle('active');
-}
-
-function toggleTone(el) {
-  document.querySelectorAll('.tone-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-}
-
-function getSelectedPlatforms() {
-  return [...document.querySelectorAll('.platform-chip.active')]
-    .map(el => el.dataset.platform);
-}
-
-function getSelectedTone() {
-  const active = document.querySelector('.tone-chip.active');
-  return active ? active.dataset.tone : 'expert';
-}
-
-// ==================== ГЕНЕРАЦИЯ ====================
-
-async function callPollinations(systemPrompt, userMessage) {
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userMessage }
-  ];
-
-  const response = await fetch('https://text.pollinations.ai/openai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'openai',
-      messages: messages,
-      temperature: 0.7,
-      max_tokens: 600
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`API ошибка: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || data[0]?.text || 'Пустой ответ';
-}
-
-async function generateAll() {
-  const userInput = document.getElementById('userInput').value.trim();
-  if (!userInput) {
-    alert('Введите описание продукта или темы!');
-    return;
-  }
-
-  const platforms = getSelectedPlatforms();
-  const tone = getSelectedTone();
-  const toneDesc = TONE_DESCRIPTIONS[tone];
-
-  if (platforms.length === 0) {
-    alert('Выберите хотя бы одну площадку!');
-    return;
-  }
-
-  const btn = document.getElementById('generateBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Генерация...';
-
-  const resultsSection = document.getElementById('resultsSection');
-  resultsSection.innerHTML = '';
-
-  // Показываем лоадеры для каждой площадки
-  platforms.forEach(p => {
-    const info = PLATFORM_PROMPTS[p];
-    resultsSection.innerHTML += `
-      <div class="loading-card" id="loading-${p}">
-        <div class="spinner"></div>
-        <div>
-          <div style="font-weight:600;font-size:14px;">${info.icon} ${info.name}</div>
-          <div style="font-size:12px;color:#999;">Генерация...</div>
-        </div>
-      </div>
-    `;
-  });
-
-  // ОДНОВРЕМЕННАЯ генерация для всех площадок
-  const promises = platforms.map(async (platform) => {
-    const info = PLATFORM_PROMPTS[platform];
-    const systemPrompt = info.systemPrompt.replace('{tone}', toneDesc);
-
-    try {
-      const result = await callPollinations(systemPrompt, userInput);
-      return { platform, result, error: null };
-    } catch (err) {
-      return { platform, result: null, error: err.message };
-    }
-  });
-
-  const results = await Promise.all(promises);
-
-  // Отображаем результаты
-  resultsSection.innerHTML = '';
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) +
-    ' ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-
-  results.forEach(({ platform, result, error }) => {
-    const info = PLATFORM_PROMPTS[platform];
-
-    if (error) {
-      resultsSection.innerHTML += `
-        <div class="result-card error-card">
-          <div class="card-header">
-            <span class="card-title">${info.icon} ${info.name}</span>
-            <span class="card-meta">${dateStr}</span>
-          </div>
-          <div class="card-text">❌ Ошибка: ${error}</div>
-        </div>
-      `;
-      return;
-    }
-
-    const words = result.trim().split(/\s+/).length;
-    const tokens = Math.ceil(result.length / 4);
-
-    resultsSection.innerHTML += `
-      <div class="result-card">
-        <div class="card-header">
-          <span class="card-title">${info.icon} ${info.name} · Тон: ${toneDesc.split(',')[0]}</span>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <span class="card-meta">${dateStr}</span>
-            <button class="copy-btn" onclick="copyText(this)">📋 Копировать</button>
-          </div>
-        </div>
-        <div class="card-text">${escapeHtml(result)}</div>
-        <div class="card-stats">
-          <span>📝 Слов: ${words}</span>
-          <span>🔤 Токенов: ~${tokens}</span>
-        </div>
-      </div>
-    `;
-
-    // Сохраняем в историю
-    saveToHistory(info.name, userInput, dateStr);
-  });
-
-  btn.disabled = false;
-  btn.textContent = '⚡ Сгенерировать для всех площадок';
-}
-
-// ==================== УТИЛИТЫ ====================
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-function copyText(btn) {
-  const card = btn.closest('.result-card');
-  const text = card.querySelector('.card-text').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    btn.textContent = '✅ Скопировано';
-    setTimeout(() => btn.textContent = '📋 Копировать', 2000);
-  });
-}
-
-function saveToHistory(title, query, date) {
-  let history = JSON.parse(localStorage.getItem('marketing_history') || '[]');
-  history.unshift({ title, query, date, id: Date.now() });
-  if (history.length > 20) history = history.slice(0, 20);
-  localStorage.setItem('marketing_history', JSON.stringify(history));
-  renderHistory();
-}
-
-function renderHistory() {
-  const history = JSON.parse(localStorage.getItem('marketing_history') || '[]');
-  const list = document.getElementById('historyList');
-
-  if (history.length === 0) {
-    list.innerHTML = '<div style="text-align:center;color:#ccc;padding:20px;font-size:13px;">История пуста</div>';
-    return;
-  }
-
-  list.innerHTML = history.map(item => `
-    <div class="history-item">
-      <div>
-        <div class="h-title">${item.title}</div>
-        <div style="font-size:12px;color:#666;margin-top:2px;">${item.query.substring(0, 50)}${item.query.length > 50 ? '...' : ''}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span class="h-date">${item.date}</span>
-        <span class="h-delete" onclick="deleteHistoryItem(${item.id})">✕</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-function deleteHistoryItem(id) {
-  let history = JSON.parse(localStorage.getItem('marketing_history') || '[]');
-  history = history.filter(item => item.id !== id);
-  localStorage.setItem('marketing_history', JSON.stringify(history));
-  renderHistory();
-}
-
-function clearHistory() {
-  localStorage.removeItem('marketing_history');
-  renderHistory();
-}
-
-// Инициализация
-renderHistory();
-</script>
-
+<!-- СКРИПТЫ: порядок важен! -->
+<script src="js/core.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>

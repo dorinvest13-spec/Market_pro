@@ -1,9 +1,40 @@
 (() => {
 'use strict';
-const {CONFIG} = Core;
+const Core = window.Core;
+const CONFIG = Core.CONFIG;
+CONFIG.REFERRER = 'dorinvest13-spec.github.io';
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
+
+/* ============ ПРАВИЛА ПЛОЩАДОК ============ */
+const PLATFORM_RULES = {
+  tg: {
+    name:'Telegram', icon:'📨',
+    short:'до 4096 симв., эмодзи-маркеры, 2-4 хештега, CTA-реакция',
+    prompt:'ПРАВИЛА ПЛОЩАДКИ Telegram: пост до 4096 символов; короткие абзацы по 1-3 строки; эмодзи как маркеры списков; в конце 2-4 хештега; призыв — поставить реакцию или перейти по ссылке; допускаются списки и лёгкое форматирование.'
+  },
+  site: {
+    name:'Сайт', icon:'🌐',
+    short:'800-1500 симв., SEO, без эмодзи и хештегов, CTA-заявка',
+    prompt:'ПРАВИЛА ПЛОЩАДКИ (сайт): SEO-описание; объём 800-1500 символов; структура: заголовок, вводный абзац, список преимуществ, абзац доверия, призыв оставить заявку; БЕЗ эмодзи; БЕЗ хештегов; деловой дружелюбный тон; ключевые слова естественно.'
+  },
+  insta: {
+    name:'Instagram', icon:'📸',
+    short:'до 2200 симв., хук в 1-й строке, 5-7 хештегов, «ссылка в шапке»',
+    prompt:'ПРАВИЛА ПЛОЩАДКИ Instagram: объём до 2200 символов; первая строка — цепляющий хук; абзацы с переносами и эмодзи; в конце 5-7 хештегов; ссылки не кликабельны — упоминай «ссылка в шапке профиля»; призыв: комментарий, сохранение, репост в сторис.'
+  },
+  vk: {
+    name:'ВКонтакте', icon:'💙',
+    short:'до 2000 симв., 2-3 хештега, эмодзи умеренно, CTA лайк/репост',
+    prompt:'ПРАВИЛА ПЛОЩАДКИ ВКонтакте: объём до 2000 символов; живой тон сообщества; эмодзи умеренно (3-6); абзацы и списки; в конце 2-3 хештега; ссылки кликабельны; призыв: лайк, репост, комментарий; можно анонсировать опрос.'
+  },
+  dzen: {
+    name:'Яндекс Дзен', icon:'📰',
+    short:'1500-2500 симв., подзаголовки, БЕЗ ссылок и хештегов',
+    prompt:'ПРАВИЛА ПЛОЩАДКИ Яндекс Дзен: статья 1500-2500 символов; интригующий заголовок без кликбейта и КАПСА; подзаголовки и абзацы по 3-5 строк; storytelling и польза, без прямой рекламы; ЗАПРЕЩЕНЫ внешние ссылки и хештеги; в конце мягкий призыв поставить лайк и подписаться.'
+  }
+};
 
 const Logger = {
   logs: [],
@@ -388,7 +419,7 @@ const FORMAT_META = {
 };
 const TONE_LABELS = {friendly:'дружеский',formal:'формальный',expert:'экспертный',bold:'дерзкий'};
 const LEN_LABELS = {short:'короткий',medium:'средний',long:'развёрнутый'};
-const GEN_PHRASES = ['Анализирую тему…','Изучаю аудиторию…','Подбираю формулировки…','Полирую текст…'];
+const GEN_PHRASES = ['Анализирую тему…','Изучаю аудиторию…','Применяю правила площадки…','Подбираю формулировки…','Полирую текст…'];
 
 const Generator = {
   els:{}, state:{fullText:'',format:'tg',tone:'friendly',len:'medium',phTimer:null,previous:null,variants:[],curVar:0},
@@ -405,10 +436,12 @@ const Generator = {
       varTabs:$('#variantTabs'), campGrid:$('#campaignGrid'), btnCamp:$('#btnCampaign'), campLabel:$('#campLabel')
     };
     this.bind();
+    this.renderFormatHint();
   },
   bind() {
     const {els} = this;
     els.ta.oninput = ()=>{els.counter.textContent=els.ta.value.length+' / 1500';els.ta.classList.remove('error')};
+    els.select.onchange = ()=>this.renderFormatHint();
     $$('#view-gen .chip[data-fill]').forEach(c=>c.onclick=()=>{els.ta.value=c.dataset.fill;els.ta.dispatchEvent(new Event('input'));els.ta.focus()});
     $('#toneBtns').onclick = e=>{const b=e.target.closest('.opt-btn');if(!b)return;$$('#toneBtns .opt-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');this.state.tone=b.dataset.tone;Settings.set('tone',b.dataset.tone)};
     $('#lenBtns').onclick = e=>{const b=e.target.closest('.opt-btn');if(!b)return;$$('#lenBtns .opt-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');this.state.len=b.dataset.len;Settings.set('len',b.dataset.len)};
@@ -431,6 +464,17 @@ const Generator = {
       Utils.download(this.state.fullText, els.fname.textContent||'text.txt','text/plain;charset=utf-8');
       Toast.show('Скачано 💾');
     };
+  },
+  renderFormatHint() {
+    const wrap = this.els.select.closest('.sel-wrap');
+    let hint = $('#formatHint');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.id = 'formatHint'; hint.className = 'hint-box';
+      wrap.after(hint);
+    }
+    const r = PLATFORM_RULES[this.els.select.value] || PLATFORM_RULES.tg;
+    hint.innerHTML = `<span class="hint-ico">${r.icon}</span><span class="hint-text"><b>${r.name}:</b> ${r.short}</span>`;
   },
   handleGen(){
     const t=this.els.ta.value.trim();
@@ -461,14 +505,35 @@ const Generator = {
     this.renderAnalyze(s.fullText);
     this.updateMeta(s.format,s.fullText);
   },
+  buildPrompt(topic,format,tone,len){
+    const r = PLATFORM_RULES[format] || PLATFORM_RULES.tg;
+    return `Ты — копирайтер, знающий правила всех площадок.\n${r.prompt}\nТема: «${topic}».\nТон: ${TONE_LABELS[tone]}.\nДлина: ${LEN_LABELS[len]}.\nТолько готовый текст на русском.`;
+  },
   async genAPI(topic,format,tone,len,seed=0){
     if(!Utils.canMakeRequest())throw new Error('Слишком много запросов');
-    const instructions={tg:'пост для Telegram',site:'описание для сайта',insta:'рекламный пост для Instagram',vk:'пост для ВКонтакте с эмодзи и хештегами',dzen:'статья для Яндекс Дзен (1500 символов) с заголовком'};
-    let prompt=`Ты — копирайтер. Напиши ${instructions[format]}.\nТема: «${topic}».\nТон: ${TONE_LABELS[tone]}.\nДлина: ${LEN_LABELS[len]}.\nТолько готовый текст на русском.`;
-    prompt = Brand.enhancePrompt(prompt);
-    const url=`${CONFIG.API.TEXT}/${encodeURIComponent(prompt)}?seed=${Date.now()+seed}&model=openai&noRefs=true`;
+    const prompt = Brand.enhancePrompt(this.buildPrompt(topic,format,tone,len));
     Utils.recordRequest();
-    const text = await Utils.cachedFetch(url);
+    let text='';
+    try{
+      const res = await fetch(CONFIG.API.TEXT+'/', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          messages:[
+            {role:'system',content:'Ты — профессиональный копирайтер. Отвечай только готовым текстом на русском языке, без комментариев.'},
+            {role:'user',content:prompt}
+          ],
+          seed:Date.now()+seed,
+          referrer:CONFIG.REFERRER
+        })
+      });
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      text = await res.text();
+    }catch(e){
+      Logger.warning('POST не прошёл, пробую GET', e.message);
+      text = await Utils.cachedFetch(`${CONFIG.API.TEXT}/${encodeURIComponent(prompt)}?seed=${Date.now()+seed}&referrer=${CONFIG.REFERRER}`);
+    }
+    if(!text||!text.trim())throw new Error('Пустой ответ');
     return Brand.filterText(text.trim());
   },
   setLoading(on){
@@ -554,14 +619,17 @@ const Generator = {
     this.updateMeta(s.format,s.fullText);
     Toast.show('Восстановлено ↩');
   },
+  /* Заглушки, соответствующие правилам каждой площадки */
   fallback(format,topic){
     const up=topic.charAt(0).toUpperCase()+topic.slice(1);
+    const lo=topic.charAt(0).toLowerCase()+topic.slice(1);
+    const tag=Core.toHashtag?Core.toHashtag(topic):topic.toLowerCase().replace(/[^a-zа-яё0-9]+/gi,'_').slice(0,24)||'новости';
     const base={
-      tg:`⚡ ${up} — новость, которую вы ждали!\n\n• старт совсем скоро\n• первым — особые условия 🎁\n• формат, о котором захочется рассказать`,
-      site:`${up}\n\nМы создали решение, которое экономит время и даёт результат.`,
-      insta:`А вы слышали про «${topic}»? 👀\n\n1. Подписка\n2. ❤️ на пост\n3. Комментарий «хочу»`,
-      vk:`🔥 ${up}!\n\n✅ просто\n✅ доступно\n✅ с подарками 🎁\n\n👍 Лайк и репост!`,
-      dzen:`${up}: всё, что важно знать в 2026 году\n\nВведение: тема актуальна как никогда.`
+      tg:`⚡ ${up} — то, о чём говорят все!\n\nКоротко о главном:\n• старт уже совсем скоро\n• первым участникам — особые условия 🎁\n• формат, о котором захочется рассказать друзьям\n\nПодробности — в следующих постах, не переключайтесь.\n👇 Ставьте 🔥, если ждёте запуска!\n\n#${tag} #новости`,
+      site:`${up}\n\nМы создали решение, которое экономит время и даёт предсказуемый результат. Прозрачные условия, живой сервис и внимание к деталям — то, за что нас выбирают клиенты.\n\nПреимущества:\n- экспертная команда и отлаженные процессы;\n- гибкие форматы под вашу задачу;\n- поддержка на каждом этапе сотрудничества.\n\nОставьте заявку на сайте — предложим оптимальный вариант и ответим на вопросы в течение рабочего дня.`,
+      insta:`А вы уже слышали про «${lo}»? 👀\n\nМы запускаем кое-что особенное — и первыми об этом узнают наши подписчики.\n\nУсловия простые:\n1️⃣ Подписка на аккаунт\n2️⃣ ❤️ на этот пост\n3️⃣ Комментарий «хочу»\n\nИтоги подведём совсем скоро. Не упустите шанс!\n🔗 Подробности — по ссылке в шапке профиля.\n\n#${tag} #акция #новинка #розыгрыш #подарки`,
+      vk:`🔥 ГОРЯЧАЯ НОВОСТЬ!\n\nПривет, друзья! 👋 У нас «${lo}» — и мы уже делимся подробностями.\n\n✅ просто и понятно\n✅ доступно каждому\n✅ с подарками для первых участников 🎁\n\n👍 Ставьте лайк, если новость по душе.\n↪ Делайте репост — пусть друзья тоже узнают.\n💬 А в комментариях расскажите, чего ждёте больше всего!\n\n📊 Скоро запустим опрос — не пропустите.\n\n#${tag} #новости`,
+      dzen:`${up}: всё, что важно знать в 2026 году\n\nВ последнее время тема «${lo}» звучит всё чаще: люди ищут проверенные решения, сравнивают варианты и хотят разобраться без лишней рекламы. Давайте спокойно рассмотрим главное.\n\nПочему это стало актуально\nРынок изменился: предложений стало больше, а вместе с ними — и вопросов. Выбор усложнился, и ошибиться стало дороже. Именно поэтому осознанный подход сейчас важнее импульсивных решений.\n\nНа что смотреть в первую очередь\nЭксперты советуют оценивать три вещи: прозрачность условий, реальный опыт других людей и качество поддержки. Если по каждому пункту есть ясность — решение принимать гораздо проще.\n\nЧастые ошибки\nСамая распространённая ошибка — выбирать только по цене. Вторая — доверять громким обещаниям без проверки фактов. Третья — откладывать решение до последнего момента, когда выбор сужается.\n\nЧто в итоге\nТема «${lo}» требует вдумчивости, но не страха. Достаточно опираться на факты, сравнивать варианты и не гнаться за модой. Тогда результат оправдает ожидания.\n\nЕсли материал был полезен — поставьте лайк и подпишитесь на канал: впереди ещё много разборов.`
     };
     return base[format]||`${up}\n\nМатериал на заданную тему.`;
   },
@@ -604,7 +672,7 @@ const Generator = {
   updateMeta(format,text){
     const m=FORMAT_META[format]||{label:'Текст'};
     const st=Core.analyzeText(text),se=Core.sentiment(text);
-    this.els.meta.innerHTML=`<span>📝 <b>${m.label}</b></span><span>·</span><span>Тон: <b>${TONE_LABELS[this.state.tone]}</b></span>`;
+    this.els.meta.innerHTML=`<span>${m.icon||'📝'} <b>${m.label}</b></span><span>·</span><span>Тон: <b>${TONE_LABELS[this.state.tone]}</b></span>`;
     this.els.stats.innerHTML=`
       <span class="stat-chip">Слов: <b>${st.words}</b></span>
       <span class="stat-chip">Токенов: <b>${st.tokens}</b></span>
@@ -690,7 +758,7 @@ const TopProducts = {
     let pi=0;els.think.textContent=this.PHRASES[0];
     state.timer=setInterval(()=>{pi=(pi+1)%this.PHRASES.length;els.think.textContent=this.PHRASES[pi]},1400);
     const prompt=`Ты — эксперт по маркетплейсам. Составь Топ-10 товаров по запросу: «${query}». Сортировка: по ${crit}. Для каждого: Название, Цена в рублях, Оценка (из 5), преимущество. Только список на русском.`;
-    const url=`${CONFIG.API.TEXT}/${encodeURIComponent(prompt)}?seed=${Date.now()}&model=openai&noRefs=true`;
+    const url=`${CONFIG.API.TEXT}/${encodeURIComponent(prompt)}?seed=${Date.now()}&referrer=${CONFIG.REFERRER}`;
     Utils.recordRequest();
     try{
       state.text=(await Utils.cachedFetch(url)).trim();
@@ -775,7 +843,7 @@ const Infographic = {
     const timer=setInterval(()=>{pi=(pi+1)%this.PHRASES.length;els.think.textContent=this.PHRASES[pi]},1200);
     const base=style||'product photography, e-commerce style';
     const prompt=`product photography, e-commerce style, high quality, 4k, ${base}`;
-    const url=`${CONFIG.API.IMAGE}/prompt/${encodeURIComponent(prompt)}?width=600&height=600&nologo=true&seed=${Date.now()}`;
+    const url=`${CONFIG.API.IMAGE}/prompt/${encodeURIComponent(prompt)}?width=600&height=600&nologo=true&seed=${Date.now()}&referrer=${CONFIG.REFERRER}`;
     Utils.recordRequest();
     try{
       const img=new Image();img.crossOrigin='anonymous';
@@ -801,7 +869,7 @@ const SelfTest = {
     Logger.info('Самодиагностика');
     const results=[
       this.testXSS(),this.testSanitizer(),this.testPlural(),
-      this.testReadability(),this.testSentiment(),this.testStorage()
+      this.testReadability(),this.testSentiment(),this.testStorage(),this.testRules()
     ];
     this.render(results);
     const passed=results.filter(r=>r.pass).length;
@@ -828,6 +896,10 @@ const SelfTest = {
     try{localStorage.setItem('__t','1');localStorage.removeItem('__t');return{name:'LocalStorage',pass:true}}
     catch{return{name:'LocalStorage',pass:false}}
   },
+  testRules(){
+    const keys=['tg','site','insta','vk','dzen'];
+    return{name:'Правила площадок',pass:keys.every(k=>PLATFORM_RULES[k]&&PLATFORM_RULES[k].prompt)};
+  },
   render(results){
     const box=$('#testResults');box.hidden=false;
     box.innerHTML=results.map(r=>`<div class="test-row ${r.pass?'pass':'fail'}"><span>${r.pass?'✅':'❌'} ${r.name}</span><span class="test-status">${r.pass?'OK':'FAIL'}</span></div>`).join('');
@@ -845,7 +917,7 @@ const DataCenter = {
     $('#clearAllBtn').onclick=()=>this.clearAll();
   },
   exportAll(){
-    const data={version:'6.1',exportedAt:new Date().toISOString(),history:History.items,templates:Templates.items,brandWords:Brand.words,settings:Settings.data,analytics:Tracker.data};
+    const data={version:'6.2',exportedAt:new Date().toISOString(),history:History.items,templates:Templates.items,brandWords:Brand.words,settings:Settings.data,analytics:Tracker.data};
     Utils.download(JSON.stringify(data,null,2),`backup-${Date.now()}.json`,'application/json');
     Toast.show('Резервная копия создана 📥');
   },
@@ -907,8 +979,8 @@ function init(){
           .catch(e=>Logger.error('SW ошибка',e));
       });
     }
-    Logger.info('Инициализация v6.1');
-    console.log('🚀 ИИ-Маркетолог PRO v6.1');
+    Logger.info('Инициализация v6.2');
+    console.log('🚀 ИИ-Маркетолог PRO v6.2');
   }catch(e){
     console.error('Init error:',e);
     Toast.show('Ошибка инициализации','error');

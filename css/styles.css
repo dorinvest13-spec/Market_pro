@@ -220,3 +220,10 @@ select option{background:var(--bg1)}
 @media(max-width:380px){.tab-btn{font-size:9px}.tab-btn .ico{font-size:14px}}
 @media(max-width:320px){.tab-btn .tab-label{display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.hint-box{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--neon-dim);border-left:3px solid var(--neon);display:flex;gap:8px;align-items:flex-start}
+.hint-ico{flex:none;font-size:14px}
+.hint-text{font-size:12px;font-weight:500;line-height:1.5;color:var(--muted)}
+.hint-text b{color:var(--neon)}
+.console-bar{flex-wrap:wrap}
+.console-actions{flex-wrap:wrap;justify-content:flex-end;max-width:100%}
+@media(max-width:420px){.copy,.dl-btn,.undo-btn,.save-template-btn{padding:7px 10px;font-size:11px}}

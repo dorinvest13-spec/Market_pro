@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#04070a">
-<title>ИИ-Маркетолог PRO v8</title>
+<title>ИИ-Маркетолог PRO v8.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Tektur:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -13,6 +13,7 @@
 [data-theme=dark]{--bg0:#04070a;--bg1:#0a1014;--ink:#e9f5ef;--muted:#7e8b94;--faint:#55636d;--neon:#2bffa8;--neon-dim:rgba(43,255,168,.12);--vio:#8b5cff;--vio-dim:rgba(139,92,255,.15);--teal:#3ee6c4;--gold:#ffd166;--line:rgba(140,255,205,.13);--line2:rgba(140,255,205,.25);--glass:rgba(14,22,26,.6);--glass2:rgba(14,22,26,.85);--danger:#ff5c7a;--danger-dim:rgba(255,92,122,.1);--warn:#ffb84d;--warn-dim:rgba(255,184,77,.1);--info:#4dc3ff;--info-dim:rgba(77,195,255,.1);--card:linear-gradient(160deg,rgba(255,255,255,.055),rgba(14,22,26,.55) 45%,rgba(139,92,255,.06));--inp:rgba(3,9,11,.6);--sh:0 24px 60px -28px rgba(0,0,0,.8)}
 [data-theme=light]{--bg0:#f5f7fa;--bg1:#eef1f5;--ink:#1a2332;--muted:#5a6b7b;--faint:#8494a5;--neon:#00b377;--neon-dim:rgba(0,179,119,.12);--vio:#6d4aff;--vio-dim:rgba(109,74,255,.12);--teal:#00b8a3;--gold:#c99300;--line:rgba(0,0,0,.08);--line2:rgba(0,0,0,.15);--glass:rgba(255,255,255,.7);--glass2:rgba(255,255,255,.9);--danger:#e63956;--danger-dim:rgba(230,57,86,.1);--warn:#e69500;--warn-dim:rgba(230,149,0,.1);--info:#0077cc;--info-dim:rgba(0,119,204,.1);--card:linear-gradient(160deg,rgba(255,255,255,.9),rgba(255,255,255,.7) 45%,rgba(109,74,255,.03));--inp:rgba(255,255,255,.85);--sh:0 24px 60px -28px rgba(0,0,0,.15)}
 *{margin:0;padding:0;box-sizing:border-box}[hidden]{display:none!important}
+html{overscroll-behavior-y:none}
 body{font-family:var(--body);color:var(--ink);background:radial-gradient(60% 40% at 85% -5%,rgba(139,92,255,.18),transparent 70%),radial-gradient(70% 45% at 10% 105%,rgba(43,255,168,.12),transparent 70%),linear-gradient(180deg,var(--bg1),var(--bg0) 40%);min-height:100vh;overflow-x:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 .app{max-width:480px;margin:0 auto;padding:0 16px 30px}
@@ -50,6 +51,7 @@ input[type=text]:focus{outline:none;border-color:var(--neon)}
 .cta:after{content:'';position:absolute;top:0;left:-70%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-20deg);animation:sheen 3.5s infinite}
 .cta:disabled{opacity:.6;cursor:progress}.cta:disabled:after{animation:none}
 .cta2{width:100%;padding:14px;margin-top:8px;border-radius:16px;border:1px solid rgba(139,92,255,.4);background:var(--vio-dim);color:var(--ink);font-weight:800;font-size:14px;cursor:pointer}
+.cta2.busy{animation:gradPulse 1.4s ease-in-out infinite;border-color:var(--vio)}
 .cta3{width:100%;padding:14px;margin-top:8px;border-radius:16px;border:1px solid var(--info);background:var(--info-dim);color:var(--info);font-weight:800;font-size:14px;cursor:pointer}
 .bar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:rgba(3,9,11,.3);border-radius:18px 18px 0 0;margin:-16px -16px 14px}
 .lights{display:flex;gap:5px}.lights i{width:9px;height:9px;border-radius:50%;opacity:.6}.lights i:nth-child(1){background:var(--vio)}.lights i:nth-child(2){background:var(--teal)}.lights i:nth-child(3){background:var(--neon)}
@@ -68,6 +70,11 @@ input[type=text]:focus{outline:none;border-color:var(--neon)}
 .schips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
 .sc{padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:11px;color:var(--muted)}
 .sc b{color:var(--neon)}
+.sc.wait{animation:chipPulse 1.2s ease-in-out infinite;border-color:var(--info);color:var(--info)}
+.sc.doneA{animation:pop .35s var(--ease);border-color:rgba(43,255,168,.5);color:var(--neon)}
+.sc.failA{animation:shk .4s;border-color:rgba(255,92,122,.5);color:var(--danger)}
+.cprog{height:6px;border-radius:3px;background:var(--inp);border:1px solid var(--line);overflow:hidden;margin-top:10px}
+.cprog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--vio),var(--neon));transition:width .5s var(--ease);box-shadow:0 0 12px var(--neon-glow,rgba(43,255,168,.4))}
 .ebox{margin-top:12px;padding:13px;border-radius:12px;background:var(--danger-dim);border:1px solid rgba(255,92,122,.35);color:#ffb7c3;font-size:13px;line-height:1.5}
 .ebox .ea{display:flex;gap:8px;margin-top:10px}.ebox .ea button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--inp);font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}
 .ebox .ea .p{background:var(--neon);color:var(--bg0);border-color:var(--neon)}
@@ -91,8 +98,9 @@ input[type=text]:focus{outline:none;border-color:var(--neon)}
 .scard{margin-top:14px;padding:14px;border-radius:16px;background:var(--inp);border:1px solid var(--line)}
 .scard h3{font-size:13px;font-weight:800;margin-bottom:8px}
 .posbadge{display:inline-grid;place-items:center;min-width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--vio),var(--neon));color:var(--bg0);font-family:var(--disp);font-weight:800;font-size:16px}
-.hl{display:flex;flex-direction:column;gap:9px}
-.hi{padding:13px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);cursor:pointer;position:relative}
+.hl{display:flex;flex-direction:column;gap:9px;max-height:360px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px;scrollbar-width:thin}
+.hl::-webkit-scrollbar{width:6px}.hl::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+.hi{padding:13px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);cursor:pointer;position:relative;flex:none}
 .hi .h1{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--neon);margin-bottom:5px}
 .hi .h1 span{color:var(--faint);font-weight:500;font-size:10px}
 .hi .h2{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -137,7 +145,7 @@ canvas#cv{width:100%;aspect-ratio:1;border-radius:14px;border:1px solid var(--li
 .md h3{font-size:16px;margin-bottom:10px}.md p{font-size:14px;color:var(--muted);margin-bottom:18px;line-height:1.5}
 .md .ma{display:flex;gap:10px}.md .ma button{flex:1;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:none;color:var(--ink)}
 .md .ma .c{background:var(--danger);border-color:var(--danger);color:#fff}
-@keyframes spin{to{transform:rotate(360deg)}}@keyframes vin{from{opacity:0;transform:translateY(16px)}}@keyframes rin{from{opacity:0;transform:translateX(-14px)}}@keyframes shk{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}@keyframes sheen{0%,55%{left:-70%}100%{left:130%}}@keyframes rot{to{--ang:360deg}}@keyframes flame{0%,100%{transform:scale(1)}50%{transform:scale(1.15) rotate(-4deg)}}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes vin{from{opacity:0;transform:translateY(16px)}}@keyframes rin{from{opacity:0;transform:translateX(-14px)}}@keyframes shk{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}@keyframes sheen{0%,55%{left:-70%}100%{left:130%}}@keyframes rot{to{--ang:360deg}}@keyframes flame{0%,100%{transform:scale(1)}50%{transform:scale(1.15) rotate(-4deg)}}@keyframes chipPulse{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.06);opacity:1}}@keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.12)}100%{transform:scale(1)}}@keyframes gradPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.4)}}
 @media(max-width:340px){.tb span{display:none}}
 </style>
 </head>
@@ -146,7 +154,7 @@ canvas#cv{width:100%;aspect-ratio:1;border-radius:14px;border:1px solid var(--li
 <header class="head">
   <div class="tile">🤖</div>
   <div><h1>ИИ-Маркетолог<i>_</i></h1><p class="st"><i id="led"></i><span id="stx">PRO активен</span></p></div>
-  <div class="ha"><span class="chip-v">v8.0</span><button class="tgl" id="theme">🌙</button></div>
+  <div class="ha"><span class="chip-v">v8.1</span><button class="tgl" id="theme">🌙</button></div>
 </header>
 
 <nav class="tabs">
@@ -258,7 +266,7 @@ canvas#cv{width:100%;aspect-ratio:1;border-radius:14px;border:1px solid var(--li
   </div>
   <div class="card">
     <div class="tag"><b>07</b> подключение ИИ (гибрид) <u></u></div>
-    <div class="hint">🔗 Вставь URL своего Cloudflare Worker (прокси GigaChat). Токен — как в worker.js (<b>market2026</b> или свой). Без Worker всё работает через Pollinations + офлайн.</div>
+    <div class="hint">🔗 Worker URL + токен. Без Worker всё работает через Pollinations + офлайн.</div>
     <div class="row" style="margin-top:10px"><input type="text" id="wUrl" placeholder="https://…workers.dev"></div>
     <div class="row"><input type="password" id="wTok" placeholder="APP_TOKEN"></div>
     <button class="cta2" id="wSave">💾 Сохранить подключение</button>
@@ -279,7 +287,7 @@ canvas#cv{width:100%;aspect-ratio:1;border-radius:14px;border:1px solid var(--li
   </div>
 </section>
 
-<footer class="foot">gigachat × pollinations × offline · <em>v8 hybrid</em></footer>
+<footer class="foot">openrouter × pollinations × offline · <em>v8.1</em></footer>
 </main>
 <div id="toast"></div>
 <div class="mo" id="mo"><div class="md"><h3 id="moT"></h3><p id="moX"></p><div class="ma"><button id="moN">Отмена</button><button class="c" id="moY">Удалить</button></div></div></div>
@@ -323,7 +331,7 @@ async worker(p,sys,kind){const{w,tok}=this.cfg();if(!w)throw new Error('worker �
  const r=await fetch(w,{method:'POST',headers:{'Content-Type':'application/json','x-app-token':tok},body:JSON.stringify({prompt:p,system:sys,kind})});
  const d=await r.json().catch(()=>({}));
  if(!r.ok||d.error)throw new Error(d.error||('worker '+r.status));
-  this.last=d.provider||'ИИ';
+ this.last=d.provider||'ИИ';
  return d.text},
 async poli(p){
  try{const r=await fetch('https://text.pollinations.ai/openai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'system',content:SYS},{role:'user',content:p}],seed:Date.now(),referrer:'dorinvest13-spec.github.io'})});
@@ -347,7 +355,7 @@ onl();addEventListener('online',onl);addEventListener('offline',onl);
 
 $$('.tb').forEach(b=>b.onclick=()=>{$$('.tb').forEach(x=>x.classList.toggle('on',x===b));$$('.view').forEach(v=>v.hidden=v.id!=='v-'+b.dataset.t);if(b.dataset.t==='data')renderDash();scrollTo({top:0,behavior:RM?'auto':'smooth'})});
 
-const hint=()=>{const r=RULES[$('#fmt').value];$('#ruleHint').innerHTML=`<b>${r.i} ${r.n}:</b> ${esc(r.s)} · модель: ${r.k==='creative'?'GigaChat-Max':'GigaChat-Pro'}`};
+const hint=()=>{const r=RULES[$('#fmt').value];$('#ruleHint').innerHTML=`<b>${r.i} ${r.n}:</b> ${esc(r.s)}`};
 hint();$('#fmt').onchange=hint;
 $('#topic').oninput=e=>{$('#cnt').textContent=e.target.value.length+' / 1500';e.target.classList.remove('err')};
 const pick=(sel,key)=>{$(sel).onclick=e=>{const b=e.target.closest('button');if(!b)return;$$(sel+' button').forEach(x=>x.classList.toggle('on',x===b));S[key]=b.dataset.v}};
@@ -361,7 +369,6 @@ async function gen(topic,fmt,mode){
  $('#fn').textContent=RULES[fmt].f;tab('t');
  $('#go').disabled=$('#go2').disabled=$('#goAll').disabled=true;
  ldOn(true,$('#ld'),$('#ldt'),PHR);
- $('#rc').scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'});
  const kind=RULES[fmt].k;let texts=[];
  try{
   if(mode==='ab'){for(let i=0;i<2;i++){try{texts.push(await AI.text(prompt(topic,fmt)+'\nВариант #'+(i+1)+', отличающийся по структуре.',SYS,kind))}catch(e){}}}
@@ -372,6 +379,7 @@ async function gen(topic,fmt,mode){
  if(S.text){S.prev={t:S.text,f:S.fmt};$('#undo').hidden=false}
  S.fmt=fmt;S.vars=mode==='ab'&&texts.length===2?texts:[];S.vi=0;S.text=texts[0];
  $$('#vtabs button').forEach((b,i)=>b.classList.toggle('on',i===0));
+ $('#rc').scrollIntoView({behavior:RM?'auto':'smooth',block:'nearest'});
  type($('#out'),S.text,()=>fin(topic,fmt));
 }
 function type(el,t,cb){if(RM){el.textContent=t;return cb()}let i=0;const f=()=>{i=Math.min(t.length,i+3+(Math.random()*4|0));el.textContent=t.slice(0,i);i<t.length?setTimeout(f,14):cb()};f()}
@@ -401,11 +409,48 @@ $('#rtabs').onclick=e=>{const b=e.target.closest('button');b&&tab(b.dataset.r)};
 $('#vtabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.vi=+b.dataset.v;S.text=S.vars[S.vi];$$('#vtabs button').forEach(x=>x.classList.toggle('on',x===b));$('#out').textContent=S.text;pv(S.fmt,S.text);pa(S.text)};
 $('#go').onclick=()=>{const t=$('#topic').value.trim();if(!t){$('#topic').classList.add('err');return toast('Введите тему','err')}gen(t,$('#fmt').value,'one')};
 $('#go2').onclick=()=>{const t=$('#topic').value.trim();if(!t){$('#topic').classList.add('err');return toast('Введите тему','err')}gen(t,$('#fmt').value,'ab')};
-$('#goAll').onclick=async()=>{const t=$('#topic').value.trim();if(!t)return toast('Введите тему','err');
- $('#goAll').disabled=true;let ok=0;
- for(const f of ['tg','insta','vk','site','dzen']){try{const x=await AI.text(prompt(t,f),SYS,RULES[f].k);S.hist.unshift({id:Date.now()+Math.random(),ts:new Date().toISOString(),fmt:f,topic:t,text:x,prov:AI.last});ok++}catch(e){}}
- S.ana.c++;save();renderHist();$('#goAll').disabled=false;
- toast(ok===5?'Кампания готова: 5/5 🚀':`Кампания: ${ok}/5`,ok===5?'ok':'warn',4000)};
+
+/* ===== КАМПАНИЯ v3: прогресс-бар + живые чипы + счётчик на кнопке ===== */
+const campBox=document.createElement('div');campBox.id='campBox';campBox.className='schips';campBox.style.marginTop='10px';campBox.hidden=true;
+const campProg=document.createElement('div');campProg.className='cprog';campProg.hidden=true;campProg.innerHTML='<i></i>';
+$('#goAll').after(campProg);campProg.after(campBox);
+$('#goAll').onclick=async()=>{
+ const t=$('#topic').value.trim();if(!t){toast('Введите тему','err');return}
+ const fmts=['tg','insta','vk','site','dzen'];
+ campBox.hidden=false;campProg.hidden=false;
+ campProg.firstElementChild.style.width='0%';
+ campBox.innerHTML=fmts.map(f=>`<span class="sc" id="cp-${f}">${RULES[f].i} ${RULES[f].n}: ⏳</span>`).join('');
+ const btn=$('#goAll');btn.disabled=true;btn.classList.add('busy');
+ let ok=0;const results=[];
+ for(let i=0;i<fmts.length;i++){
+  const f=fmts[i],cell=$('#cp-'+f);
+  cell.classList.add('wait');
+  btn.textContent=`🚀 Кампания: ${i+1}/5 — ${RULES[f].n}…`;
+  try{
+   const x=await AI.text(prompt(t,f),SYS,RULES[f].k);
+   results.push({f,x});ok++;
+   cell.textContent=`${RULES[f].i} ${RULES[f].n}: ✅`;
+   cell.classList.remove('wait');cell.classList.add('doneA');
+  }catch(e){
+   cell.textContent=`${RULES[f].i} ${RULES[f].n}: ❌`;
+   cell.classList.remove('wait');cell.classList.add('failA');
+  }
+  campProg.firstElementChild.style.width=Math.round((i+1)/fmts.length*100)+'%';
+  await new Promise(r=>setTimeout(r,1500));
+ }
+ btn.classList.remove('busy');btn.disabled=false;btn.textContent='🚀 Кампания: все 5 площадок';
+ S.ana.c++;save();
+ results.forEach((r,i)=>S.hist.unshift({id:Date.now()+i,ts:new Date().toISOString(),fmt:r.f,topic:t,text:r.x,prov:AI.last}));
+ save();renderHist();
+ if(results.length){
+  S.text=results[0].x;S.fmt=results[0].f;
+  $('#fmt').value=results[0].f;hint();
+  $('#empty').hidden=true;$('#rtabs').hidden=false;$('#out').hidden=false;tab('t');
+  $('#out').textContent=S.text;pv(S.fmt,S.text);pa(S.text);
+  $('#cp').disabled=$('#dl').disabled=false;$('#fn').textContent=RULES[S.fmt].f;
+ }
+ toast(ok===5?'Кампания готова: 5/5 🚀':`Кампания: ${ok}/5 (остальные — лимит модели)`,ok===5?'ok':'warn',4000);
+};
 $('#undo').onclick=()=>{if(!S.prev)return;const c={t:S.text,f:S.fmt};S.text=S.prev.t;S.fmt=S.prev.f;S.prev=c;$('#out').textContent=S.text;pv(S.fmt,S.text);pa(S.text);toast('Восстановлено ↩')};
 $('#star').onclick=()=>{const t=$('#topic').value.trim();if(!t)return;if(S.tpls.includes(t))return toast('Уже есть','warn');S.tpls.unshift(t);save();renderTpl();toast('Шаблон сохранён ★')};
 $('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(S.text)}catch(e){const a=document.createElement('textarea');a.value=S.text;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}$('#cp').classList.add('done');setTimeout(()=>$('#cp').classList.remove('done'),1400);toast('Скопировано 📋')};
@@ -514,7 +559,7 @@ $('#wSave').onclick=()=>{ls(K.w,$('#wUrl').value.trim());ls(K.wt,$('#wTok').valu
 $('#wTest').onclick=async()=>{toast('Проверяю гибрид…','info');
  try{await AI.text('Ответь одним словом: ОК',SYS,'struct');toast('ИИ отвечает: '+AI.last+' ✅')}
  catch(e){toast('Ошибка: '+e.message,'err',4500)}};
-$('#expAll').onclick=()=>dl(JSON.stringify({v:'8.0',hist:S.hist,tpls:S.tpls,ana:S.ana},null,2),'aim-backup-'+Date.now()+'.json','application/json');
+$('#expAll').onclick=()=>dl(JSON.stringify({v:'8.1',hist:S.hist,tpls:S.tpls,ana:S.ana},null,2),'aim-backup-'+Date.now()+'.json','application/json');
 $('#wipe').onclick=()=>confirmD('Удалить ВСЁ?','История, шаблоны, статистика, подключение.',()=>{Object.values(K).forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});location.reload()});
 $('#tests').onclick=async()=>{toast('Тестирую…','info');const R=[];
  R.push({n:'XSS-экранирование',p:esc('<script>')==='&lt;script&gt;'});
@@ -527,8 +572,8 @@ $('#tests').onclick=async()=>{toast('Тестирую…','info');const R=[];
  const b=$('#tres');b.hidden=false;b.innerHTML=R.map(r=>`<div class="tr ${r.p?'pass':'fail'}"><span>${r.p?'✅':'❌'} ${esc(r.n)}</span><span class="ts">${r.p?'OK':'FAIL'}</span></div>`).join('');
  toast('Тесты: '+R.filter(x=>x.p).length+'/'+R.length,R.every(x=>x.p)?'ok':'warn')};
 renderHist();renderDash();
-console.log('🚀 ИИ-Маркетолог PRO v8 (GigaChat hybrid)');
+console.log('🚀 ИИ-Маркетолог PRO v8.1');
 })();
 </script>
 </body>
-                                                                                                                                                                                     </html>
+</html>

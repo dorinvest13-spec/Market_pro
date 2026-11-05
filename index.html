@@ -323,7 +323,7 @@ async worker(p,sys,kind){const{w,tok}=this.cfg();if(!w)throw new Error('worker �
  const r=await fetch(w,{method:'POST',headers:{'Content-Type':'application/json','x-app-token':tok},body:JSON.stringify({prompt:p,system:sys,kind})});
  const d=await r.json().catch(()=>({}));
  if(!r.ok||d.error)throw new Error(d.error||('worker '+r.status));
- this.last=d.provider==='giga-max'?'GigaChat-Max ⚡':'GigaChat-Pro 🇷';
+  this.last=d.provider||'ИИ';
  return d.text},
 async poli(p){
  try{const r=await fetch('https://text.pollinations.ai/openai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'system',content:SYS},{role:'user',content:p}],seed:Date.now(),referrer:'dorinvest13-spec.github.io'})});

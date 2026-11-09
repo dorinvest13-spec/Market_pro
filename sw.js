@@ -1,9 +1,12 @@
-/* SW v9.2 — документы из сети (кэш как резерв), ассеты из кэша */
-const CACHE = 'aim-cache-v92';
+/* SW v9.7 — документы из сети (кэш как резерв), ассеты из кэша; install не падает на недостающих файлах */
+const CACHE = 'aim-cache-v97';
 const CORE = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    for (const u of CORE) { try { await c.add(u) } catch (e) {} }
+  })().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -15,7 +18,6 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // переходы (открытие приложения) — всегда пробуем сеть
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request)
@@ -24,7 +26,6 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // остальное — кэш-первой
   e.respondWith(
     caches.match(e.request).then(m => m || fetch(e.request)
       .then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put(e.request, cp)); return r; })

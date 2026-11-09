@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#04070a">
-<title>ИИ-Маркетолог PRO v9.2</title>
+<title>ИИ-Маркетолог PRO v9.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Tektur:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -184,7 +184,7 @@ canvas#cv{width:100%;aspect-ratio:1;border-radius:14px;border:1px solid var(--li
 <header class="head">
   <div class="tile">🤖</div>
   <div><h1>ИИ-Маркетолог<i>_</i></h1><p class="st"><i id="led"></i><span id="stx">PRO активен</span></p></div>
-  <div class="ha"><span class="chip-v">v9.2</span><button class="tgl" id="theme">🌙</button></div>
+  <div class="ha"><span class="chip-v">v9.4</span><button class="tgl" id="theme">🌙</button></div>
 </header>
 
 <nav class="tabs">
@@ -230,6 +230,9 @@ canvas#cv{width:100%;aspect-ratio:1;border-radius:14px;border:1px solid var(--li
     <div class="wsec">
       <div class="tag"><b>04</b> текст поста и превью <u></u></div>
       <button class="cta2" id="wTextBtn">✍️ Сгенерировать текст поста</button>
+      <button class="cta2" id="wCampBtn">🚀 Кампания: все 5 площадок</button>
+      <div class="schips" id="wCampBox" hidden></div>
+      <div class="cprog" id="wCampProg" hidden><i></i></div>
       <textarea id="wTextEdit" hidden placeholder="Здесь можно поправить текст перед публикацией…"></textarea>
       <div class="pv" id="wPrev" hidden></div>
     </div>
@@ -360,7 +363,7 @@ canvas#cv{width:100%;aspect-ratio:1;border-radius:14px;border:1px solid var(--li
   </div>
 </section>
 
-<footer class="foot">цех × workers-ai × flux · <em>v9.2</em></footer>
+<footer class="foot">цех × кампания × workers-ai · <em>v9.4</em></footer>
 </main>
 <div id="toast"></div>
 <div class="mo" id="mo"><div class="md"><h3 id="moT"></h3><p id="moX"></p><div class="ma"><button id="moN">Отмена</button><button class="c" id="moY">Удалить</button></div></div></div>
@@ -458,7 +461,6 @@ $$('.fmtgrid').forEach(g=>g.onclick=e=>{const b=e.target.closest('.fmtbtn');if(!
  else setFmt(b.dataset.f)});
 syncFmt();
 
-/* ===== синхронизация тона/длины между вкладками ===== */
 const syncOb=(key,val)=>{const map={tone:['#tones','#wTones'],len:['#lens']};(map[key]||[]).forEach(s=>$$(s+' button').forEach(b=>b.classList.toggle('on',b.dataset.v===val)))};
 const wpick=(sel,key)=>{$(sel).onclick=e=>{const b=e.target.closest('button');if(!b)return;S[key]=b.dataset.v;syncOb(key,S[key])}};
 
@@ -470,9 +472,9 @@ $('#wTopic').oninput=e=>{$('#wCnt').textContent=e.target.value.length+' / 1500';
 wpick('#wTones','tone');
 $('#wCount').onclick=e=>{const b=e.target.closest('button');if(!b)return;$$('#wCount button').forEach(x=>x.classList.toggle('on',x===b));W.nvar=+b.dataset.n};
 $('#wAdd').onclick=()=>$('#wFile').click();
-$('#wFile').onchange=async e=>{for(const f of Array.from(e.target.files).slice(0,Math.max(0,3-W.photos.length))){if(!f.type.startsWith('image/'))continue;try{W.photos.push(await comp(f))}catch(err){}}e.target.value='';renderPhotos()};
+$('#wFile').onchange=async e=>{for(const f of Array.from(e.target.files).slice(0,Math.max(0,3-W.photos.length))){if(!f.type.startsWith('image/'))continue;try{const src=await comp(f);W.photos.push({src:src,im:await loadImg(src,15000)})}catch(err){}}e.target.value='';renderPhotos()};
 function renderPhotos(){const s=$('#wPhotos');s.querySelectorAll('.pc').forEach(x=>x.remove());
- W.photos.forEach((p,i)=>{const d=document.createElement('div');d.className='pc';d.innerHTML=`<img src="${p}"><button data-x="${i}">✕</button>`;s.insertBefore(d,$('#wAdd'))});
+ W.photos.forEach((p,i)=>{const d=document.createElement('div');d.className='pc';d.innerHTML=`<img src="${p.src}"><button data-x="${i}">✕</button>`;s.insertBefore(d,$('#wAdd'))});
  s.onclick=e=>{const b=e.target.closest('[data-x]');if(b){W.photos.splice(+b.dataset.x,1);renderPhotos()}}}
 const curSet=()=>W.sets[W.set];
 const setCur=v=>{W.sets[W.set]=v};
@@ -484,7 +486,7 @@ function scene(ctx,Wd,Hd,v,st){
  const bg=v.bgImg||st.bgImg;
  if(bg)coverI(ctx,bg,0,0,Wd,Hd);
  else{const g=ctx.createLinearGradient(0,0,Wd,Hd);g.addColorStop(0,'#12241c');g.addColorStop(1,'#1a1030');ctx.fillStyle=g;ctx.fillRect(0,0,Wd,Hd)}
- const photo=st.photos[v.pi%st.photos.length];
+ const photo=(st.photos[v.pi%st.photos.length]||{}).im||null;
  const k=Wd/1080;
  if(v.layout==='sp'){const lw=Wd*.45;
   if(photo)coverI(ctx,photo,lw,0,Wd-lw,Hd);
@@ -508,6 +510,8 @@ function scene(ctx,Wd,Hd,v,st){
   ctx.fillStyle='#111';ctx.font=`800 ${40*k}px Manrope`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(badge.slice(0,7),Wd-110*k,112*k)}
 }
 function makePv(v,st){const c=document.createElement('canvas');c.width=460;c.height=460;scene(c.getContext('2d'),460,460,v,st);v.pv=c.toDataURL('image/jpeg',.82);return v}
+function renderWPrev(){const st=curSet();$('#wPrev').innerHTML=pvHTML(S.fmt,$('#wTextEdit').value||W.text,st?st.vars.filter(v=>v.pv).map(v=>v.pv):[])}
+const maybePrev=()=>{if(!$('#wPrev').hidden)renderWPrev()};
 function renderGrid(){const st=curSet();const g=$('#wGrid');
  if(!st||!st.vars||!st.vars.length){g.innerHTML='';$('#wSetChip').hidden=true;maybePrev();return}
  g.innerHTML=st.vars.map((v,i)=>'<div class="mcell">'+(v.pv?'<img src="'+v.pv+'" alt="v'+(i+1)+'">':'<div class="ld" style="padding:26px"><div class="sp"></div></div>')+'<span class="mb"><button data-a="'+i+'" title="Новый ракурс">📐</button><button data-b="'+i+'" title="Новый фон">🎨</button><button data-x="'+i+'" title="Убрать">✕</button></span></div>').join('');
@@ -515,7 +519,6 @@ function renderGrid(){const st=curSet();const g=$('#wGrid');
  if(W.sets.B){chip.innerHTML=`<span class="sc ${W.set==='A'?'doneA':''}">Пакет A</span><span class="sc ${W.set==='B'?'doneA':''}">Пакет B</span><span class="sc">активен: <b>${W.set}</b> — тапни для смены</span>`;
   chip.onclick=()=>{W.set=W.set==='A'?'B':'A';renderGrid()}}
  maybePrev()}
-const maybePrev=()=>{if(!$('#wPrev').hidden)renderWPrev()};
 $('#wGrid').onclick=async e=>{const st=curSet();if(!st)return;
  const a=e.target.closest('[data-a]'),b=e.target.closest('[data-b]'),x=e.target.closest('[data-x]');
  if(a){const v=st.vars[+a.dataset.a];Object.assign(v,rndTr());makePv(v,st);renderGrid();toast('Ракурс обновлён 📐');return}
@@ -560,6 +563,9 @@ $('#wBgBtn').onclick=async()=>{const st=curSet();if(!st)return toast('Снача
  try{st.bgImg=await loadImg(await AI.image(st.bgPrompt+', другой ракурс света'),25000);for(const v of st.vars){v.bgImg=null;makePv(v,st)}renderGrid();toast('Фон обновлён 🎨')}catch(e){toast('Фон не удался','err')}};
 $('#wShufBtn').onclick=()=>{const st=curSet();if(!st)return toast('Сначала собери варианты','warn');
  for(const v of st.vars){Object.assign(v,rndTr());makePv(v,st)}renderGrid();toast('Ракурсы перемешаны 📐')};
+
+/* ================= ТЕКСТ, ПРЕВЬЮ, ЭКСПОРТ ================= */
+const prompt=(t,f)=>`${RULES[f].p}\nТЕМА: «${t}».\nТОН: ${TONES[S.tone]}.\nОБЪЁМ: ${LENS[S.len]}.\nВерни только готовый текст.`;
 $('#wTextBtn').onclick=async()=>{const t=$('#wTopic').value.trim();if(!t){$('#wTopic').classList.add('err');return toast('Введите тему','err')}
  $('#wTextBtn').disabled=true;$('#wTextBtn').textContent='✍️ Пишу текст…';
  try{W.text=await AI.text(prompt(t,S.fmt),SYS,RULES[S.fmt].k);
@@ -577,7 +583,6 @@ function pvHTML(f,t,imgs){const strip=imgs&&imgs.length?`<div class="carr">${img
  if(f==='insta')return strip+`<div class="pv-in"><div class="ph">📸</div><div class="cp">❤️ 💬 <br>${s}</div></div>`;
  if(f==='site')return strip+`<div class="pv-st"><b>🌐 Описание</b><p>${s}</p></div>`;
  const pp=s.split('<br><br>').slice(0,3).join('</p><p>');return strip+`<div class="pv-dz"><h4>📰 Статья</h4><p>${pp}</p></div>`}
-function renderWPrev(){const st=curSet();$('#wPrev').innerHTML=pvHTML(S.fmt,$('#wTextEdit').value||W.text,st?st.vars.filter(v=>v.pv).map(v=>v.pv):[])}
 function exportRenders(){const st=curSet();if(!st||!st.vars.length)return[];
  const Wd=RULES[S.fmt].size[0],Hd=RULES[S.fmt].size[1];
  return st.vars.map(v=>{const c=document.createElement('canvas');c.width=Wd;c.height=Hd;scene(c.getContext('2d'),Wd,Hd,v,st);return c.toDataURL('image/jpeg',.9)})}
@@ -593,22 +598,41 @@ $('#wDlSite').onclick=()=>{const rs=exportRenders();const t=$('#wTextEdit').valu
  paras.forEach(p=>{body+='<p>'+esc(p)+'</p>';if(rs[ii]){body+='<img src="'+rs[ii]+'" alt="">';ii++}});
  while(rs[ii]){body+='<img src="'+rs[ii]+'" alt="">';ii++}
  if(!paras)body=rs.map(u=>'<img src="'+u+'" alt="">').join('');
- const html='<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(topic)+'</title><style>body{margin:0;background:#0e1417;color:#e9f5ef;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px}h1{font-size:26px;line-height:1.25;margin:0 0 14px}p{line-height:1.75;color:#c9d6ce;white-space:pre-wrap}img{width:100%;border-radius:14px;margin:12px 0}.m{color:#77868f;font-size:12px;margin-top:22px}</style></head><main><h1>'+esc(topic)+'</h1>'+body+'<div class="m">ИИ-Маркетолог PRO v9.2 · '+RULES[S.fmt].n+' · '+new Date().toLocaleString('ru-RU')+'</div></main></html>';
+ const html='<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(topic)+'</title><style>body{margin:0;background:#0e1417;color:#e9f5ef;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}main{max-width:760px;margin:0 auto;padding:28px 16px}h1{font-size:26px;line-height:1.25;margin:0 0 14px}p{line-height:1.75;color:#c9d6ce;white-space:pre-wrap}img{width:100%;border-radius:14px;margin:12px 0}.m{color:#77868f;font-size:12px;margin-top:22px}</style></head><main><h1>'+esc(topic)+'</h1>'+body+'<div class="m">ИИ-Маркетолог PRO v9.4 · '+RULES[S.fmt].n+' · '+new Date().toLocaleString('ru-RU')+'</div></main></html>';
  dl(html,'post-'+S.fmt+'-'+Date.now()+'.html','text/html');toast('Мини-сайт сохранён 📄')};
 $('#wShare').onclick=async()=>{const rs=exportRenders();const t=$('#wTextEdit').value||W.text;
  if(!t&&!rs.length)return toast('Нечего отправлять','warn');
  const txt=t||$('#wTopic').value.trim()||'Пост';
  try{const files=[];for(let i=0;i<rs.length;i++){const bl=await(await fetch(rs[i])).blob();files.push(new File([bl],'card-'+(i+1)+'.jpg',{type:'image/jpeg'}))}
-  if(navigator.canShare&&navigator.canShare({files})){await navigator.share({files,text:txt,title:'Пост '+RULES[S.fmt].n});toast('Отправлено 📤')}
+  if(navigator.canShare&&navigator.canShare({files})){await navigator.share({files:files,text:txt,title:'Пост '+RULES[S.fmt].n});toast('Отправлено 📤')}
   else if(navigator.share){await navigator.share({text:txt});toast('Текст отправлен, фото сохрани отдельно 📤')}
   else toast('Web Share не поддерживается — используй 💾','warn')}
  catch(e){if(e.name!=='AbortError')toast('Не поделилось: '+e.message,'err')}};
 
-/* ================= БЫСТРЫЙ ПОСТ ================= */
-const prompt=(t,f)=>`${RULES[f].p}\nТЕМА: «${t}».\nТОН: ${TONES[S.tone]}.\nОБЪЁМ: ${LENS[S.len]}.\nВерни только готовый текст.`;
+/* ================= БЫСТРЫЙ ПОСТ + КАМПАНИЯ ================= */
 let phT;const ldOn=(on,box,txt,arr)=>{box.hidden=!on;if(on){let i=0;txt.textContent=arr[0];phT=setInterval(()=>{i=(i+1)%arr.length;txt.textContent=arr[i]},1100)}else clearInterval(phT)};
 const showErr=(box,e,retry)=>{box.hidden=false;box.innerHTML=`<b>⚠ ${esc(e&&e.message||'Ошибка')}</b><br>Проверь Worker (вкладка «Данные») или повтори.<div class="ea"><button class="p" id="rtry">🔄 Повторить</button></div>`;$('#rtry').onclick=retry};
 const btns=on=>{$('#go').disabled=$('#go2').disabled=$('#goAll').disabled=on};
+async function runCampaign(topic,btn,box,prog){
+ const fmts=['tg','insta','vk','site','dzen'];
+ box.hidden=false;prog.hidden=false;prog.firstElementChild.style.width='0%';
+ box.innerHTML=fmts.map(f=>`<span class="sc" data-c="${f}">${RULES[f].i} ${RULES[f].n}: ⏳</span>`).join('');
+ btn.disabled=true;btn.classList.add('busy');
+ let ok=0;const results=[];
+ for(let i=0;i<fmts.length;i++){
+  const f=fmts[i],cell=box.querySelector('[data-c="'+f+'"]');cell.classList.add('wait');
+  btn.textContent=`🚀 Кампания: ${i+1}/5 — ${RULES[f].n}…`;
+  try{const x=await AI.text(prompt(topic,f),SYS,RULES[f].k);results.push({f:f,x:x});ok++;
+   cell.textContent=`${RULES[f].i} ${RULES[f].n}: ✅`;cell.classList.remove('wait');cell.classList.add('doneA')}
+  catch(e){cell.textContent=`${RULES[f].i} ${RULES[f].n}: ❌`;cell.classList.remove('wait');cell.classList.add('failA')}
+  prog.firstElementChild.style.width=Math.round((i+1)/fmts.length*100)+'%';
+  await new Promise(r=>setTimeout(r,1200))}
+ btn.classList.remove('busy');btn.disabled=false;btn.textContent='🚀 Кампания: все 5 площадок';
+ S.ana.c++;save();
+ results.forEach((r,i)=>S.hist.unshift({id:Date.now()+i,ts:new Date().toISOString(),fmt:r.f,topic:topic,text:r.x,prov:AI.last}));
+ save();renderHist();
+ toast(ok===5?'Кампания готова: 5/5 🚀':`Кампания: ${ok}/5`,ok===5?'ok':'warn',4000);
+ return results}
 $('#topic').oninput=e=>{$('#cnt').textContent=e.target.value.length+' / 1500';e.target.classList.remove('err')};
 wpick('#tones','tone');wpick('#lens','len');
 async function gen(topic,fmt,mode){
@@ -632,7 +656,7 @@ function fin(topic,fmt){
  $('#meta').hidden=false;$('#meta').innerHTML=`<span>${RULES[fmt].i} <b>${RULES[fmt].n}</b></span><span>·</span><span>Тон: <b>${TONES[S.tone]}</b></span><span>·</span><span>🤖 <b>${esc(AI.last)}</b></span>`;
  $('#sch').hidden=false;$('#sch').innerHTML=`<span class="sc">Слов: <b>${st.w}</b></span><span class="sc">Токенов: <b>${st.tok}</b></span><span class="sc">${se.i} <b>${se.l}</b></span>`;
  S.ana.g++;S.ana.w+=st.w;save();
- S.hist.unshift({id:Date.now(),ts:new Date().toISOString(),fmt,topic,text:S.text,prov:AI.last});save();renderHist();
+ S.hist.unshift({id:Date.now(),ts:new Date().toISOString(),fmt:fmt,topic:topic,text:S.text,prov:AI.last});save();renderHist();
  toast('Готово ✨ '+AI.last)}
 function pv(f,t,imgs){$('#pvb').innerHTML=pvHTML(f,t,imgs)}
 function pa(t){const r=read(t),se=sent(t),st=an(t);
@@ -648,27 +672,17 @@ $('#go2').onclick=()=>{const t=$('#topic').value.trim();if(!t){$('#topic').class
 const campBox=document.createElement('div');campBox.className='schips';campBox.style.marginTop='10px';campBox.hidden=true;
 const campProg=document.createElement('div');campProg.className='cprog';campProg.hidden=true;campProg.innerHTML='<i></i>';
 $('#goAll').after(campProg);campProg.after(campBox);
-$('#goAll').onclick=async()=>{
- const t=$('#topic').value.trim();if(!t){toast('Введите тему','err');return}
- const fmts=['tg','insta','vk','site','dzen'];
- campBox.hidden=false;campProg.hidden=false;campProg.firstElementChild.style.width='0%';
- campBox.innerHTML=fmts.map(f=>`<span class="sc" id="cp-${f}">${RULES[f].i} ${RULES[f].n}: ⏳</span>`).join('');
- const btn=$('#goAll');btn.disabled=true;btn.classList.add('busy');
- let ok=0;const results=[];
- for(let i=0;i<fmts.length;i++){const f=fmts[i],cell=$('#cp-'+f);cell.classList.add('wait');
-  btn.textContent=`🚀 Кампания: ${i+1}/5 — ${RULES[f].n}…`;
-  try{const x=await AI.text(prompt(t,f),SYS,RULES[f].k);results.push({f,x});ok++;cell.textContent=`${RULES[f].i} ${RULES[f].n}: ✅`;cell.classList.remove('wait');cell.classList.add('doneA')}
-  catch(e){cell.textContent=`${RULES[f].i} ${RULES[f].n}: ❌`;cell.classList.remove('wait');cell.classList.add('failA')}
-  campProg.firstElementChild.style.width=Math.round((i+1)/fmts.length*100)+'%';
-  await new Promise(r=>setTimeout(r,1500))}
- btn.classList.remove('busy');btn.disabled=false;btn.textContent='🚀 Кампания: все 5 площадок';
- S.ana.c++;save();
- results.forEach((r,i)=>S.hist.unshift({id:Date.now()+i,ts:new Date().toISOString(),fmt:r.f,topic:t,text:r.x,prov:AI.last}));
- save();renderHist();
- if(results.length){S.text=results[0].x;S.fmt=results[0].f;syncFmt();
+$('#goAll').onclick=async()=>{const t=$('#topic').value.trim();if(!t){$('#topic').classList.add('err');return toast('Введите тему','err')}
+ const res=await runCampaign(t,$('#goAll'),campBox,campProg);
+ if(res.length){S.text=res[0].x;S.fmt=res[0].f;syncFmt();
   $('#empty').hidden=true;$('#rtabs').hidden=false;$('#out').hidden=false;tab('t');
-  $('#out').textContent=S.text;pv(S.fmt,S.text,[]);pa(S.text);$('#cp').disabled=$('#dl').disabled=false;$('#star').hidden=false}
- toast(ok===5?'Кампания готова: 5/5 🚀':`Кампания: ${ok}/5`,ok===5?'ok':'warn',4000)};
+  $('#out').textContent=S.text;pv(S.fmt,S.text,[]);pa(S.text);$('#cp').disabled=$('#dl').disabled=false;$('#star').hidden=false}};
+$('#wCampBtn').onclick=async()=>{const t=$('#wTopic').value.trim();if(!t){$('#wTopic').classList.add('err');return toast('Введите тему','err')}
+ const res=await runCampaign(t,$('#wCampBtn'),$('#wCampBox'),$('#wCampProg'));
+ const cur=res.find(r=>r.f===S.fmt);
+ if(cur){W.text=cur.x;$('#wTextEdit').hidden=false;$('#wTextEdit').value=W.text;$('#wPrev').hidden=false;renderWPrev();
+  toast('Кампания готова: текст '+RULES[S.fmt].i+' '+RULES[S.fmt].n+' уже в шаге 04 🚀')}
+ else if(res.length){toast('Кампания готова: открой нужную площадку кнопкой в шаге 01 🚀')}};
 $('#undo').onclick=()=>{if(!S.prev)return;const c={t:S.text,f:S.fmt};S.text=S.prev.t;S.fmt=S.prev.f;S.prev=c;$('#out').textContent=S.text;pv(S.fmt,S.text,[]);pa(S.text);toast('Восстановлено ↩')};
 $('#star').onclick=()=>{const t=$('#topic').value.trim();if(!t)return;if(S.tpls.includes(t))return toast('Уже есть','warn');S.tpls.unshift(t);save();renderTpl();toast('Шаблон сохранён ★')};
 $('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(S.text)}catch(e){toast('Не скопировалось','err');return}$('#cp').classList.add('done');setTimeout(()=>$('#cp').classList.remove('done'),1400);toast('Скопировано 📋')};
@@ -770,7 +784,7 @@ function renderTpl(){const t=$('#tpls');if(!S.tpls.length){t.innerHTML='<div cla
 $('#wSave').onclick=()=>{ls(K.w,$('#wUrl').value.trim());ls(K.wt,$('#wTok').value.trim()||'market2026');toast('Сохранено 🔗')};
 $('#wTest').onclick=async()=>{toast('Проверяю…','info');
  try{await AI.text('Ответь одним словом: ОК',SYS,'struct');toast('ИИ отвечает: '+AI.last+' ✅')}catch(e){toast('Ошибка: '+e.message,'err',4500)}};
-$('#expAll').onclick=()=>dl(JSON.stringify({v:'9.2',hist:S.hist,tpls:S.tpls,ana:S.ana},null,2),'aim-backup-'+Date.now()+'.json','application/json');
+$('#expAll').onclick=()=>dl(JSON.stringify({v:'9.4',hist:S.hist,tpls:S.tpls,ana:S.ana},null,2),'aim-backup-'+Date.now()+'.json','application/json');
 $('#wipe').onclick=()=>confirmD('Удалить ВСЁ?','История, шаблоны, статистика, подключение.',()=>{Object.values(K).forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});location.reload()});
 $('#tests').onclick=async()=>{toast('Тестирую…','info');const R=[];
  R.push({n:'XSS',p:esc('<script>')==='&lt;script&gt;'});
@@ -785,8 +799,8 @@ $('#tests').onclick=async()=>{toast('Тестирую…','info');const R=[];
  const b=$('#tres');b.hidden=false;b.innerHTML=R.map(r=>`<div class="tr2 ${r.p?'pass':'fail'}"><span>${r.p?'✅':'❌'} ${esc(r.n)}</span><span class="ts">${r.p?'OK':'FAIL'}</span></div>`).join('');
  toast('Тесты: '+R.filter(x=>x.p).length+'/'+R.length,R.every(x=>x.p)?'ok':'warn')};
 renderHist();renderDash();
-console.log('🏭 ИИ-Маркетолог PRO v9.2 «Цех»');
+console.log('🏭 ИИ-Маркетолог PRO v9.4 — финальная сборка');
 })();
 </script>
 </body>
-      </html>
+</html>

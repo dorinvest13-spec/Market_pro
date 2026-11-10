@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Упаковщик DOCX · ИИ-Маркетолог PRO</title>
+<title>Упаковщик DOCX v2 · ИИ-Маркетолог PRO</title>
 <style>
 body{font-family:system-ui,sans-serif;background:#0e1417;color:#e9f5ef;margin:0;padding:24px 16px}
 h1{font-size:20px;margin:0 0 6px}p{color:#8aa0a8;font-size:13px;margin:0 0 18px}
@@ -13,8 +13,8 @@ button.alt{background:#16232a;color:#9fe8c9;border:1px solid #2bffa855}
 </style>
 </head>
 <body>
-<h1>📦 Упаковщик файлов проекта в DOCX</h1>
-<p>Нажми кнопку — файл соберётся и скачается в «Загрузки». Готово к загрузке в DeepSeek.</p>
+<h1>📦 Упаковщик файлов проекта в DOCX (v2)</h1>
+<p>Сначала берёт файл из репозитория, если 404 — встроенную копию. Кнопка «ВСЁ ПРОЕКТОМ» собирает полный пакет одним DOCX.</p>
 <button onclick="go('index.html')">📄 index.html → index.docx</button>
 <button onclick="go('worker.js')">️ worker.js → worker.docx</button>
 <button onclick="go('sw.js')">🔄 sw.js → sw.docx</button>
@@ -22,8 +22,267 @@ button.alt{background:#16232a;color:#9fe8c9;border:1px solid #2bffa855}
 <button onclick="go('README.md')">📘 README.md → README.docx</button>
 <button class="alt" onclick="goAll()">📦 ВСЁ ПРОЕКТОМ в один DOCX</button>
 <div id="log"></div>
+
+<script type="text/plain" data-name="worker.js">
+/* ============================================
+   AI-PROXY v13.2 — единая AI-точка приложения
+   1) Текст: Workers AI (Llama-4 → Mistral → Qwen3 → DeepSeek-R1)
+             → OpenRouter free-пул (автоподбор + статический запас)
+   2) Картинки: Flux → SDXL → Pollinations
+   3) Защита: x-app-token / ?ping=
+   ============================================ */
+const OPENROUTER_KEY = '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';
+const APP_TOKEN      = 'market2026';
+const SITE_REF       = 'https://dorinvest13-spec.github.io/';
+const UA             = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
+const SYSRU = 'Ты — профессиональный копирайтер. Отвечай только готовым текстом на русском, без комментариев.';
+
+const WA_MODELS = [
+  '@cf/meta/llama-4-scout-17b-16e-instruct',
+  '@cf/mistralai/mistral-small-3.1-24b-instruct',
+  '@cf/qwen/qwen3-30b-a3b-fp8',
+  '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'
+];
+const WA_IMG = [
+  '@cf/black-forest-labs/flux-1-schnell',
+  '@cf/stabilityai/stable-diffusion-xl'
+];
+const OR_STATIC = [
+  'liquid/lfm-2.5-2.6b:free',
+  'deepseek/deepseek-chat:free',
+  'qwen/qwen3-30b-a3b:free'
+];
+
+const H = {
+  'content-type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'content-type,x-app-token',
+  'Access-Control-Allow-Methods': 'POST,GET,OPTIONS'
+};
+const J = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: H });
+
+let MCACHE = null, MCACHE_T = 0;
+async function orModels() {
+  if (MCACHE && Date.now() - MCACHE_T < 6 * 3600 * 1000 && MCACHE.length) return MCACHE;
+  try {
+    const r = await fetch('https://openrouter.ai/api/v1/models');
+    if (r.ok) {
+      const d = await r.json();
+      const list = (d.data || []).filter(m => {
+        const p = m.pricing || {};
+        return String(p.prompt) === '0' && String(p.completion) === '0';
+      }).map(m => m.id);
+      const score = id => {
+        const l = id.toLowerCase();
+        let s = 9;
+        if (l.includes('deepseek')) s = 0;
+        else if (l.includes('qwen')) s = 1;
+        else if (l.includes('llama')) s = 2;
+        else if (l.includes('glm')) s = 3;
+        else if (l.includes('mistral')) s = 4;
+        else if (l.includes('gemma') && l.includes('it')) s = 5;
+        else if (l.includes('gemini')) s = 6;
+        else if (l.includes('cohere') || l.includes('command')) s = 7;
+        else if (l.includes('phi')) s = 8;
+        if (l.includes('code') || l.includes('coder')) s += 6;
+        if (l.includes('lyria') || l.includes('audio') || l.includes('image') || l.includes('dots') || l.includes('note')) s += 9;
+        if (l.includes('reasoning') || l.includes('think')) s += 3;
+        return s;
+      };
+      list.sort((a, b) => score(a) - score(b) || a.localeCompare(b));
+      if (list.length) { MCACHE = list.slice(0, 6); MCACHE_T = Date.now(); }
+    }
+  } catch (e) {}
+  if (!MCACHE || !MCACHE.length) MCACHE = OR_STATIC.slice();
+  return MCACHE;
+}
+
+let LAST_ERRS = [];
+
+export default {
+  async fetch(req, env) {
+    if (req.method === 'OPTIONS') return new Response(null, { headers: H });
+    const url = new URL(req.url);
+
+    if (req.method === 'GET') {
+      if (url.searchParams.get('ping') !== APP_TOKEN) return J({ error: '403 forbidden' }, 403);
+      try {
+        const r = await anyModel(env, 'Скажи одно слово: ОК', SYSRU, 0.3);
+        return J({ ok: true, provider: r.model, sample: r.text.slice(0, 40), backend: r.backend, img: !!env.AI, wa_log: LAST_ERRS.slice(0, 4) });
+      } catch (e) {
+        return J({ ok: false, error: String(e.message || e), wa_log: LAST_ERRS.slice(0, 4) }, 502);
+      }
+    }
+
+    if (req.headers.get('x-app-token') !== APP_TOKEN) return J({ error: '403 forbidden' }, 403);
+    try {
+      const b = await req.json();
+      if (b.action === 'image') {
+        const p = String(b.prompt || '').slice(0, 800);
+        const r = await genImage(env, p);
+        return J({ image: r.image, provider: r.provider });
+      }
+      const r = await anyModel(env, b.prompt, b.system || SYSRU, b.kind === 'creative' ? 0.9 : 0.5);
+      return J({ text: r.text, provider: r.model, backend: r.backend });
+    } catch (e) {
+      return J({ error: String(e.message || e) }, 502);
+    }
+  }
+};
+
+async function genImage(env, prompt) {
+  if (env.AI) {
+    for (const m of WA_IMG) {
+      try {
+        const r = await env.AI.run(m, { prompt });
+        if (r && r.image) return { image: 'data:image/png;base64,' + r.image, provider: m.replace('@cf/', '') };
+      } catch (e) {}
+    }
+  }
+  return {
+    image: 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) + '?width=1024&height=1024&nologo=true&seed=' + (Date.now() % 1000000),
+    provider: 'pollinations-img'
+  };
+}
+
+async function anyModel(env, prompt, system, temp) {
+  const errs = [];
+  if (env.AI) {
+    for (const model of WA_MODELS) {
+      try {
+        const d = await env.AI.run(model, {
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: prompt }
+          ],
+          temperature: temp,
+          max_tokens: 2500
+        });
+        const raw = String(d?.response || d?.result || '');
+        const t = raw.replace(/<\/?think>/gi, '').trim();
+        if (!t) throw new Error('empty');
+        LAST_ERRS = errs.slice();
+        return { text: t, model: model.replace('@cf/', ''), backend: 'workers-ai' };
+      } catch (e) {
+        errs.push('WA:' + model.replace('@cf/', '') + '→' + (e.message || e));
+      }
+    }
+  } else {
+    errs.push('WA:биндинг AI не добавлен');
+  }
+  LAST_ERRS = errs.slice();
+
+  const list = await orModels();
+  for (const model of list) {
+    try {
+      const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + OPENROUTER_KEY,
+          'User-Agent': UA,
+          'HTTP-Referer': SITE_REF,
+          'X-Title': 'ИИ-Маркетолог PRO'
+        },
+        body: JSON.stringify({
+          model,
+          temperature: temp,
+          max_tokens: 2500,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: prompt }
+          ]
+        })
+      });
+      if (!r.ok) {
+        const b = await r.text().catch(() => '');
+        throw new Error('http ' + r.status + ' ' + b.slice(0, 60));
+      }
+      const d = await r.json();
+      let t = d?.choices?.[0]?.message?.content || '';
+      t = String(t).replace(/<\/?think>/gi, '').trim();
+      if (!t) throw new Error('empty');
+      return { text: t, model, backend: 'openrouter' };
+    } catch (e) {
+      errs.push('OR:' + model.split('/').pop() + '→' + e.message);
+    }
+  }
+  throw new Error(errs.join(' | ').slice(0, 600));
+}
+</script>
+
+<script type="text/plain" data-name="manifest.webmanifest">
+{
+  "name": "ИИ-Маркетолог PRO",
+  "short_name": "ИИ-Маркет",
+  "description": "Генератор продающих постов и карточек товара на нейросетях",
+  "lang": "ru",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#04070a",
+  "theme_color": "#04070a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
+</script>
+
+<script type="text/plain" data-name="README.md">
+# ИИ-Маркетолог PRO v9.7 — мобильный PWA-комплекс контент-маркетинга
+
+## Назначение
+Генерация продающих постов под 5 площадок (Telegram, Instagram, ВКонтакте, сайт, Яндекс Дзен)
++ сборка визуальных карточек товара (реальное фото клиента + AI-фон/ракурсы)
++ аналитика «Топ-10 товаров за неделю» + экспорт пакета к публикации (PNG/HTML/Web Share).
+
+## Файлы
+- index.html — всё приложение (разметка + стили + JS, один файл, без сборщиков и зависимостей)
+- worker.js  — Cloudflare Worker: единая AI-точка (текст + изображения), защита токеном
+- sw.js      — service worker: офлайн-резерв и обновления (network-first для навигации)
+- manifest.webmanifest, icon.svg — PWA-установка
+
+## Архитектура
+Телефон (РФ) → GitHub Pages (index.html)
+  → POST/GET https://giga-proxy.dorinvest13.workers.dev (x-app-token: market2026)
+      → 1) Cloudflare Workers AI: текст (llama-4-scout → mistral-small-3.1 → qwen3-30b → deepseek-r1-distill)
+                                 картинки (flux-1-schnell → stable-diffusion-xl)
+      → 2) OpenRouter free-пул (автоподбор по pricing=0 + статический запас) — резерв текста
+      → 3) image.pollinations.ai — резерв картинки (часто 404, считается мертвым)
+
+## Контракты Worker API
+GET  /?ping=<APP_TOKEN>  → {ok, provider, sample, backend: workers-ai|openrouter, img, wa_log}
+POST /  x-app-token:<APP_TOKEN> {prompt, system?, kind?}  → {text, provider, backend}
+POST /  x-app-token:<APP_TOKEN> {action:'image', prompt}  → {image: dataURL|url, provider}
+Ошибки: 403 (нет токена), 502 (все бэкенды упали; текст ошибки = журнал попыток)
+
+## Ключевые механизмы index.html
+- Цех (wizard 01–06): площадка/тема → фото товара (1–3) → AI-арт-директор (LLM возвращает JSON-план:
+  bg/headline/badge/variants[layout,scale,ox,oy,rot]) → canvas-рендер N вариантов (превью 460px, экспорт под размер площадки)
+- multiply-склейка: если фото товара на белом фоне (авто-детект по средней яркости 24×24 > 225),
+  белый становится прозрачным поверх AI-сцены + контактная тень (радиальный градиент)
+- Кампания: последовательная генерация текстов под 5 площадок с чип-прогрессом, результаты в историю + localStorage
+- A/B-пакеты подачи, переключатель пакетов, пер-ячейковая регенерация фона/ракурса
+- История: localStorage aim7-hist (до 30 записей), тизеры 5 шт в обеих вкладках, экспорт JSON
+- Экспорт: PNG под размер площадки (TG 1280², Insta 1080×1350, VK 1200², site 1600×900, Dzen 1200×800),
+  мини-сайт HTML (текст вперемешку с img), Web Share API (files+text), копирование текста
+- Хранение: aim7-* ключи (hist, tpl, ana, th, worker, wtoken, week, camp, wtopic, whead, wbadge)
+
+## Известные ограничения среды (РФ, ноябрь 2026)
+- workers.dev блокируется провайдерами РФ → основной вход: custom domain на Cloudflare (ai.dva-ai.ru, зона dva-ai.ru)
+- OpenRouter/DeepSeek/GigaChat напрямую из РФ недоступны или требуют ключей; вызовы идут сервер-сервер с эджа Cloudflare
+- Pollinations text/image анонимно отключён (404) — оставлен как последний резерв с таймаутом 25 c
+- Instagram публикация без Meta API невозможна; Дзен без публичного API — только ручной перенос
+
+## Версии
+v8.x — генератор+кампания+карточки+топ; v9.0–9.6 — Цех, multiply, история, аудит-фиксы; v9.7 — финальный аудит (12 фиксов)
+</script>
+
 <script>
 const log=m=>{document.getElementById('log').textContent+=m+'\n'};
+const EMBED={};
+document.querySelectorAll('script[type="text/plain"]').forEach(s=>{EMBED[s.dataset.name]=s.textContent.replace(/^\n/,'')});
 const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c}return t})();
 const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_T[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
 function zipStore(entries){
@@ -68,16 +327,20 @@ function docxBlob(text){
  ]);
 }
 function save(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
-async function grab(f){const r=await fetch('./'+f,{cache:'no-store'});if(!r.ok)throw new Error(f+' → HTTP '+r.status);return await r.text()}
-async function go(f){try{log('⏳ читаю '+f+'…');const t=await grab(f);save(docxBlob(t),f.replace(/\.[^.]+$/,'')+'.docx');log('✅ '+f+' → DOCX скачан')}catch(e){log('❌ '+e.message+' (файл не закоммичен?)')}}
+async function grab(f){
+ try{const r=await fetch('./'+f,{cache:'no-store'});if(r.ok)return await r.text()}catch(e){}
+ if(EMBED[f]){log('ℹ️ '+f+' — взята встроенная копия');return EMBED[f]}
+ throw new Error(f+' → HTTP 404 (файл не закоммичен?)');
+}
+async function go(f){try{log('⏳ читаю '+f+'…');const t=await grab(f);save(docxBlob(t),f.replace(/\.[^.]+$/,'')+'.docx');log('✅ '+f+' → DOCX скачан')}catch(e){log('❌ '+e.message)}}
 async function goAll(){try{
  log('⏳ собираю весь проект…');
  const list=['README.md','worker.js','sw.js','manifest.webmanifest','index.html'];
  let out='',miss=[];
  for(const f of list){try{out+='\n\n========== ФАЙЛ: '+f+' ==========\n\n'+await grab(f)}catch(e){miss.push(f)}}
- if(miss.length)log('⚠️ не найдены в репо: '+miss.join(', ')+' — упакуй их отдельно после коммита');
+ if(miss.length)log('⚠️ не найдены: '+miss.join(', '));
  save(docxBlob(out),'AI-Marketing-PRO-v9.7-full.docx');
- log('✅ полный DOCX скачан'+(miss.length?' (без: '+miss.join(', ')+')':''))
+ log('✅ полный DOCX скачан'+(miss.length?' (без: '+miss.join(', ')+')':' — все 5 файлов внутри'))
 }catch(e){log('❌ '+e.message)}}
 </script>
 </body>

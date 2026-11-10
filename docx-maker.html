@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Упаковщик DOCX · ИИ-Маркетолог PRO</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#0e1417;color:#e9f5ef;margin:0;padding:24px 16px}
+h1{font-size:20px;margin:0 0 6px}p{color:#8aa0a8;font-size:13px;margin:0 0 18px}
+button{display:block;width:100%;margin:8px 0;padding:14px;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(120deg,#7c4dff,#3ee6c4);color:#04070a}
+button.alt{background:#16232a;color:#9fe8c9;border:1px solid #2bffa855}
+#log{margin-top:14px;font-size:12px;color:#77868f;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<h1>📦 Упаковщик файлов проекта в DOCX</h1>
+<p>Нажми кнопку — файл соберётся и скачается в «Загрузки». Готово к загрузке в DeepSeek.</p>
+<button onclick="go('index.html')">📄 index.html → index.docx</button>
+<button onclick="go('worker.js')">️ worker.js → worker.docx</button>
+<button onclick="go('sw.js')">🔄 sw.js → sw.docx</button>
+<button onclick="go('manifest.webmanifest')">📱 manifest.webmanifest → manifest.docx</button>
+<button onclick="go('README.md')">📘 README.md → README.docx</button>
+<button class="alt" onclick="goAll()">📦 ВСЁ ПРОЕКТОМ в один DOCX</button>
+<div id="log"></div>
+<script>
+const log=m=>{document.getElementById('log').textContent+=m+'\n'};
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c}return t})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_T[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+function zipStore(entries){
+ const enc=new TextEncoder();const parts=[];const locs=[];let offset=0;
+ for(const e of entries){
+  const name=enc.encode(e.name),data=e.data,crc=crc32(data);
+  const lh=new DataView(new ArrayBuffer(30));
+  lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0,true);lh.setUint16(8,0,true);
+  lh.setUint16(10,0x0821,true);lh.setUint16(12,0x5A85,true);lh.setUint32(14,crc,true);
+  lh.setUint32(18,data.length,true);lh.setUint32(22,data.length,true);lh.setUint16(26,name.length,true);lh.setUint16(28,0,true);
+  parts.push(new Uint8Array(lh.buffer),name,data);
+  locs.push({name,crc,size:data.length,offset});offset+=30+name.length+data.length;
+ }
+ const cdStart=offset;
+ for(const l of locs){
+  const name=enc.encode(l.name);
+  const ch=new DataView(new ArrayBuffer(46));
+  ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0,true);ch.setUint16(10,0,true);
+  ch.setUint16(12,0x0821,true);ch.setUint16(14,0x5A85,true);ch.setUint32(16,l.crc,true);ch.setUint32(20,l.size,true);ch.setUint32(24,l.size,true);
+  ch.setUint16(28,name.length,true);ch.setUint16(30,0,true);ch.setUint16(32,0,true);ch.setUint16(34,0,true);ch.setUint16(36,0,true);
+  ch.setUint32(38,0,true);ch.setUint32(42,l.offset,true);
+  parts.push(new Uint8Array(ch.buffer),name);offset+=46+name.length;
+ }
+ const eo=new DataView(new ArrayBuffer(22));
+ eo.setUint32(0,0x06054b50,true);eo.setUint16(4,0,true);eo.setUint16(6,0,true);
+ eo.setUint16(8,locs.length,true);eo.setUint16(10,locs.length,true);
+ eo.setUint32(12,offset-cdStart,true);eo.setUint32(16,cdStart,true);eo.setUint16(20,0,true);
+ parts.push(new Uint8Array(eo.buffer));
+ return new Blob(parts,{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+const escXml=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function docxBlob(text){
+ const paras=text.split(/\r?\n/).map(line=>'<w:p><w:r><w:rPr><w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/><w:sz w:val="16"/></w:rPr><w:t xml:space="preserve">'+escXml(line)+'</w:t></w:r></w:p>').join('');
+ const doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+paras+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/></w:sectPr></w:body></w:document>';
+ const ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>';
+ const rels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+ const enc=new TextEncoder();
+ return zipStore([
+  {name:'[Content_Types].xml',data:enc.encode(ct)},
+  {name:'_rels/.rels',data:enc.encode(rels)},
+  {name:'word/document.xml',data:enc.encode(doc)}
+ ]);
+}
+function save(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+async function grab(f){const r=await fetch('./'+f,{cache:'no-store'});if(!r.ok)throw new Error(f+' → HTTP '+r.status);return await r.text()}
+async function go(f){try{log('⏳ читаю '+f+'…');const t=await grab(f);save(docxBlob(t),f.replace(/\.[^.]+$/,'')+'.docx');log('✅ '+f+' → DOCX скачан')}catch(e){log('❌ '+e.message+' (файл не закоммичен?)')}}
+async function goAll(){try{
+ log('⏳ собираю весь проект…');
+ const list=['README.md','worker.js','sw.js','manifest.webmanifest','index.html'];
+ let out='',miss=[];
+ for(const f of list){try{out+='\n\n========== ФАЙЛ: '+f+' ==========\n\n'+await grab(f)}catch(e){miss.push(f)}}
+ if(miss.length)log('⚠️ не найдены в репо: '+miss.join(', ')+' — упакуй их отдельно после коммита');
+ save(docxBlob(out),'AI-Marketing-PRO-v9.7-full.docx');
+ log('✅ полный DOCX скачан'+(miss.length?' (без: '+miss.join(', ')+')':''))
+}catch(e){log('❌ '+e.message)}}
+</script>
+</body>
+</html>
